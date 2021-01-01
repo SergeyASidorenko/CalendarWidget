@@ -1,0 +1,57 @@
+#calendar {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    position: absolute;
+    width: 30%;
+}
+
+.year {
+    background: linear-gradient(45deg, #363, #696);
+    color: white;
+    transition: all .4s;
+    padding: .1em;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.year:hover {
+    background: linear-gradient(45deg, #696, #7a7);
+}
+
+.days_in_month {
+    float: left;
+    background: #336;
+    width: 50%;
+}
+
+.days_in_month h4 {
+    text-align: center;
+    color: white;
+    font-variant: small-caps;
+}
+
+.day {
+    width: 14.2857%;
+    background-color: #444;
+    color: white;
+    transition: background-color .4s;
+    padding: .1em;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+.day.active {
+    cursor: pointer;
+    background: #336;
+}
+
+.day.weekend {
+    background: #633;
+}
+
+.day.active:hover {
+    background: #669;
+}
+
+.day.weekend:hover {
+    background: #966;
+}
