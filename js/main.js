@@ -1,4 +1,11 @@
-var Calendar = function (initiator, event) {
+/**
+* Класс календаря с возиожностью выбра одной даты, периода, 
+* а также настройки диапазона дат, из которого эти даты можно выбрать
+ * @param  initiator 
+ * @param {*} event 
+ */
+var Calendar = function (initiator, event, isPeriod) {
+    // HTML узел, который будеит содержат всю разметку календаря
     this.container = null;
     this.yearsContainer = null;
     this.monthsContainer = null;
@@ -15,19 +22,33 @@ var Calendar = function (initiator, event) {
     this.endDisplayedMonth = null;
     this.startDisplayedYear = null;
     this.endDisplayedYear = null;
+    // Возможный диапазон выбора годов
     this.yearsRange = 40;
+    // Возможный диапазон выбора дат в днях
+    // Это диапазон разобъется пополам и отсчет будеит производиться от текущей даты в будущее и прошлое
+    // на количество дней, равное половине этого значения
     this.daysRangeToChoose = 100;
+    // Массив годов, доступных для отображения
     this.years = [];
+    // Массив годов, доступных для выбора пользователем
     this.yearsToChoose = [];
+    // Массив дней, доступных для выбора пользователем
     this.daysToChoose = [];
     this.initiator = initiator;
     this.event = event;
+    // Флаг, указывающий, нужно ли пользователю выбирать период, а не просто одну дату
+    this.isPeriod = isPeriod;
     this.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    /**
+     * Определение количества дней в месяце данного года
+     * @param {*} month 
+     * @param {*} year 
+     */
     this.getDaysCountOfMonth = function (month, year) {
-        if (year === undefined) {
-            year = new Date().getFullYear();
-        }
         if (month == 1) {
+            if (year === undefined) {
+                year = new Date().getFullYear();
+            }
             return year % 4 == 0 ? 29 : 28;
         }
         if (month == 11) {
@@ -35,13 +56,24 @@ var Calendar = function (initiator, event) {
         }
         return month % 2 == 0 ? 31 : 30;
     }
+    /**
+     * Определение русского наименования месяца
+     * @param {*} month 
+     */
     this.getMonthName = function (month) {
         return this.monthNames[month];
     }
+    /**
+     * Метод определения, отображен ли в момент вызова календарь в окне браузере
+     */
     this.isDisplayed = function () {
         return window.getComputedStyle(this.container).display != 'none';
     };
-    this.isPeriod = false;
+    /**
+     * Инициализация календаря
+     * Создание и добавление нужных узлов в дерево HTML документа
+     * Инициализация размеров некоторых элементов
+     */
     this.init = function () {
         this.container = document.getElementById('calendar');
         this.container.style.display = 'none';
@@ -73,6 +105,8 @@ var Calendar = function (initiator, event) {
             let calendarContainerWidth = getNodeWidth(this.container, window.innerWidth);
             let monthNodeWidth = getNodeWidth(monthNode, calendarContainerWidth);
             // -------------------------------------------------------------------------
+            // Временно создаем и добавляем элемнт, содержащий дату, в дерево HTML документа, чтобы вычислить размер в пикселях
+            // дабы получить отображение этого элемента в виде квадрата
             let dayNode = document.createElement('span');
             dayNode.className = 'day';
             monthNode.appendChild(dayNode);
@@ -98,6 +132,10 @@ var Calendar = function (initiator, event) {
         }.bind(this));
         this.initiator.addEventListener(this.event, this.switch.bind(this));
     }
+    /**
+     * Инициализация массивов годов, месяцев и дней, в том числе с учетом разрешенного
+     * диапазона дат
+     */
     this.initDays = function () {
         let date = new Date();
         let year = date.getFullYear();
@@ -108,6 +146,7 @@ var Calendar = function (initiator, event) {
             this.startYear = this.years[0];
             this.endYear = this.years[this.years.length - 1];
         }
+        // Инициализация расчета разрешенного периода выбора дат
         let startDay = day - Math.floor(this.daysRangeToChoose / 2);
         let endDay = day + Math.floor(this.daysRangeToChoose / 2);
 
@@ -176,12 +215,22 @@ var Calendar = function (initiator, event) {
             }
         }.bind(this));
     }
+    /**
+     * Отображение календаря в окне браузера
+     */
     this.hide = function () {
         this.container.style.display = 'none';
     }
+    /**
+     * 
+     *  Скрытие календаря в окне браузера
+     */
     this.show = function () {
         this.container.style.display = 'block';
     }
+    /**
+     * Переключение каледаря из видимого состояния в невидимое или наоборот
+     */
     this.switch = function () {
         if (!this.isDisplayed()) {
             this.show()
@@ -190,6 +239,13 @@ var Calendar = function (initiator, event) {
         }
     }
 }
+/**
+ * Вспомогательная функция расчета размера элемента 
+ * в пикселях на основе декларации размера ширины в пикселах из
+ * правила CSS относительно размера ширины его родительского узла
+ * @param {*} node 
+ * @param {*} parentWidth 
+ */
 function getNodeWidth(node, parentWidth) {
     let nodeWidth = window.getComputedStyle(node).width;
     if (nodeWidth.indexOf('%') != -1) {
