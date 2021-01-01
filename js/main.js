@@ -16,16 +16,19 @@ var Calendar = function (initiator, event) {
     this.startDisplayedYear = null;
     this.endDisplayedYear = null;
     this.yearsRange = 40;
-    this.daysRangeToChoose = 50;
+    this.daysRangeToChoose = 100;
     this.years = [];
     this.yearsToChoose = [];
     this.daysToChoose = [];
     this.initiator = initiator;
     this.event = event;
     this.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    this.getDaysCountOfMonth = function (month) {
+    this.getDaysCountOfMonth = function (month, year) {
+        if (year === undefined) {
+            year = new Date().getFullYear();
+        }
         if (month == 1) {
-            return date.getFullYear() % 4 == 0 ? 29 : 28;
+            return year % 4 == 0 ? 29 : 28;
         }
         if (month == 11) {
             return 31;
@@ -122,17 +125,17 @@ var Calendar = function (initiator, event) {
                     curYear--;
                     this.yearsToChoose[curYear] = [];
                 }
-                this.yearsToChoose[curYear].push(curMonthNumber);
-                leftDaysCount = leftDaysCount + this.getDaysCountOfMonth(curMonthNumber);
+                this.yearsToChoose[curYear].unshift(curMonthNumber);
+                leftDaysCount = leftDaysCount + this.getDaysCountOfMonth(curMonthNumber, curYear);
             }
             startDay = leftDaysCount;
             startYearToChoose = curYear;
         }
-        if (endDay > this.getDaysCountOfMonth(month)) {
+        if (endDay > this.getDaysCountOfMonth(month, year)) {
             curYear = year;
             curMonthNumber = month;
             leftDaysCount = endDay;
-            while (leftDaysCount > this.getDaysCountOfMonth(curMonthNumber)) {
+            while (leftDaysCount > this.getDaysCountOfMonth(curMonthNumber, curYear)) {
                 curMonthNumber++
                 if (curMonthNumber > 11) {
                     curMonthNumber = 0;
@@ -140,22 +143,22 @@ var Calendar = function (initiator, event) {
                     this.yearsToChoose[curYear] = [];
                 }
                 this.yearsToChoose[curYear].push(curMonthNumber);
-                leftDaysCount = leftDaysCount - this.getDaysCountOfMonth(curMonthNumber);
+                leftDaysCount = leftDaysCount - this.getDaysCountOfMonth(curMonthNumber, curYear);
             }
             endDay = leftDaysCount;
             endYearToChoose = curYear;
         }
-        let isInPeriod = false;
+        let isInPeriod = true;
         this.yearsToChoose.forEach(function (months, yearIndex) {
             date.setFullYear(yearIndex);
             for (let monthIndex = 0; monthIndex < months.length; monthIndex++) {
                 date.setMonth(months[monthIndex]);
                 this.daysToChoose.push({ 'month': months[monthIndex], 'days': [] });
-                for (let day = 1; day <= this.getDaysCountOfMonth(months[monthIndex]); day++) {
-                    isInPeriod = false;
-                    if ((yearIndex == startYearToChoose && monthIndex == 0 && day >= startDay) ||
-                        (yearIndex == endYearToChoose && monthIndex == months.length - 1 && day <= endDay)) {
-                        isInPeriod = true;
+                for (let day = 1; day <= this.getDaysCountOfMonth(months[monthIndex], yearIndex); day++) {
+                    isInPeriod = true;
+                    if ((yearIndex == startYearToChoose && monthIndex == 0 && day < startDay) ||
+                        (yearIndex == endYearToChoose && monthIndex == months.length - 1 && day > endDay)) {
+                        isInPeriod = false;
                     }
                     date.setDate(day);
                     let dayOfWeek = date.getDay();
