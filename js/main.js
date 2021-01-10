@@ -4,41 +4,63 @@
  * @param  initiator 
  * @param {*} event 
  */
-var Calendar = function (initiator, event, isPeriod) {
+var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
+    // Флаг указывающий, что нужно создать календарь с возможностью выбора диапазона
+    this.isPossibleRange = isPossibleRange;
     // HTML узел, который будеит содержат всю разметку календаря
     this.container = null;
     this.yearsContainer = null;
     this.monthsContainer = null;
     this.daysContainer = null;
-    this.startYear = null;
-    this.startDay = null;
-    this.startMonth = null;
-    this.endYear = null;
-    this.endDay = null;
-    this.endMonth = null;
+    //-------------------------------------------
+    this.startPossibleYear = null;
+    this.endPossibleYear = null;
+    this.startPossibleDay = null;
+    this.endPossibleDay = null;
+    //-------------------------------------------
     this.startDisplayedDay = null;
     this.endDisplayedDay = null;
     this.startDisplayedMonth = null;
     this.endDisplayedMonth = null;
     this.startDisplayedYear = null;
     this.endDisplayedYear = null;
+    //-------------------------------------------
+    this.startSelectedYear = null;
+    this.endSelectedYear = null;
+    this.startSelectedMonth = null;
+    this.endSelectedMonth = null;
+    this.startSelectedDay = null;
+    this.endSelectedDay = null;
+    this.startDateInput = null;
+    this.endDateInput = null;
+    this.startTimeInput = null;
+    this.endTimeInput = null;
+    //-------------------------------------------
+    this.endYearByMouseOver = null;
+    this.endMonthByMouseOver = null;
+    this.endDayByMouseOver = null;
+    //-------------------------------------------
+    // Массив дней, которые нужно отобразить в браузере
+    this.daysToShowInCalendar = [];
+    // Массив дней, доступных для выбора пользователем
+    this.possibleDays = [];
     // Возможный диапазон выбора годов
     this.yearsRange = 40;
     // Возможный диапазон выбора дат в днях
     // Это диапазон разобъется пополам и отсчет будеит производиться от текущей даты в будущее и прошлое
     // на количество дней, равное половине этого значения
-    this.daysRangeToChoose = 100;
+    this.possibleDaysRange = 100;
     // Массив годов, доступных для отображения
     this.years = [];
     // Массив годов, доступных для выбора пользователем
-    this.yearsToChoose = [];
-    // Массив дней, доступных для выбора пользователем
-    this.daysToChoose = [];
+    this.possibleYears = [];
+
     this.initiator = initiator;
     this.event = event;
     // Флаг, указывающий, нужно ли пользователю выбирать период, а не просто одну дату
     this.isPeriod = isPeriod;
     this.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    this.dayContainerNodes = [];
     /**
      * Определение количества дней в месяце данного года
      * @param {*} month 
@@ -70,6 +92,60 @@ var Calendar = function (initiator, event, isPeriod) {
         return window.getComputedStyle(this.container).display != 'none';
     };
     /**
+     * Перерисовка календаря на основе новых параметров
+     */
+    this.redraw = function () {
+        // Заполняем секцию выбора годов
+        this.years.forEach(function (year) {
+            let yearNode = document.createElement('span');
+            yearNode.className = 'year';
+            yearNode.innerHTML = year;
+            this.yearsContainer.appendChild(yearNode);
+        }.bind(this));
+        // Заполняем сам календарь днями
+        this.daysToShowInCalendar.forEach(function (months, year) {
+            let yearContainerNode = document.createElement('div');
+            yearContainerNode.className = 'year_container';
+            yearContainerNode.dataset.number = year;
+            this.daysContainer.appendChild(yearContainerNode);
+            months.forEach(function (days, month) {
+                let monthHeading = document.createElement('h4');
+                monthHeading.innerHTML = this.getMonthName(month);
+                let monthContainerNode = document.createElement('div');
+                monthContainerNode.className = 'month_container';
+                monthContainerNode.dataset.number = month;
+                monthContainerNode.appendChild(monthHeading);
+                yearContainerNode.appendChild(monthContainerNode);
+                let calendarContainerWidth = getNodeWidth(this.container, window.innerWidth);
+                let monthContainerNodeWidth = getNodeWidth(monthContainerNode, calendarContainerWidth);
+                // -------------------------------------------------------------------------
+                // Временно создаем и добавляем элемент, содержащий дату, в дерево HTML документа, чтобы вычислить размер в пикселях
+                // дабы получить отображение этого элемента в виде квадрата
+                let dayContainerNode = document.createElement('span');
+                dayContainerNode.className = 'day'
+                monthContainerNode.appendChild(dayContainerNode);
+                let dayDivWidth = getNodeWidth(dayContainerNode, monthContainerNodeWidth);
+                monthContainerNode.removeChild(dayContainerNode);
+                // -------------------------------------------------------------------------
+                days.forEach(function (dayInfo) {
+                    if (!dayInfo.isInDOM) {
+                        if (dayInfo.isInPeriod) {
+                            dayInfo.node.classList.add('active');
+                        }
+                        if (dayInfo.isWeekEnd) {
+                            dayInfo.node.classList.add('weekend');
+                        }
+                        if (dayInfo.margin !== undefined) {
+                            dayInfo.node.style.marginLeft = dayInfo.margin + '%';
+                        }
+                        monthContainerNode.appendChild(dayInfo.node);
+                    }
+                    dayInfo.node.style.height = dayDivWidth + 'px';
+                }.bind(this));
+            }.bind(this));
+        }.bind(this));
+    }
+    /**
      * Инициализация календаря
      * Создание и добавление нужных узлов в дерево HTML документа
      * Инициализация размеров некоторых элементов
@@ -89,48 +165,140 @@ var Calendar = function (initiator, event, isPeriod) {
         this.container.appendChild(this.monthsContainer);
         this.container.appendChild(this.daysContainer);
         this.initDays();
-        this.years.forEach(function (year) {
-            let yearNode = document.createElement('span');
-            yearNode.className = 'year';
-            yearNode.innerHTML = year;
-            this.yearsContainer.appendChild(yearNode);
-        }.bind(this));
-        this.daysToChoose.forEach(function (monthData, monthIndex) {
-            let monthNode = document.createElement('div');
-            let monthHeading = document.createElement('h4');
-            monthHeading.innerHTML = this.getMonthName(monthData.month);
-            monthNode.className = 'days_in_month';
-            monthNode.appendChild(monthHeading);
-            this.daysContainer.appendChild(monthNode);
-            let calendarContainerWidth = getNodeWidth(this.container, window.innerWidth);
-            let monthNodeWidth = getNodeWidth(monthNode, calendarContainerWidth);
-            // -------------------------------------------------------------------------
-            // Временно создаем и добавляем элемнт, содержащий дату, в дерево HTML документа, чтобы вычислить размер в пикселях
-            // дабы получить отображение этого элемента в виде квадрата
-            let dayNode = document.createElement('span');
-            dayNode.className = 'day';
-            monthNode.appendChild(dayNode);
-            let dayDivWidth = getNodeWidth(dayNode, monthNodeWidth);
-            monthNode.removeChild(dayNode);
-            // -------------------------------------------------------------------------
-            monthData.days.forEach(function (dayInfo, dayIndex) {
-                let dayNode = document.createElement('span');
-                dayNode.className = 'day';
-                dayNode.innerHTML = dayInfo.day;
-                if (dayInfo.isInPeriod) {
-                    dayNode.classList.add('active');
-                }
-                if (dayInfo.isWeekEnd) {
-                    dayNode.classList.add('weekend');
-                }
-                if (dayInfo.margin !== undefined) {
-                    dayNode.style.marginLeft = dayInfo.margin + '%';
-                }
-                monthNode.appendChild(dayNode);
-                dayNode.style.height = dayDivWidth + 'px';
-            }.bind(this));
-        }.bind(this));
+        this.redraw();
+        this.startDateInput = document.createElement('input');
+        this.startDateInput.type = 'text';
+        this.startDateInput.readOnly = true;
+        this.container.appendChild(this.startDateInput);
+        this.startTimeInput = document.createElement('input');
+        this.startTimeInput.type = 'text';
+        this.startTimeInput.className = 'calendar_time_input';
+        this.container.appendChild(this.startTimeInput);
+        if (this.isPeriod) {
+            this.endDateInput = document.createElement('input');
+            this.endDateInput.type = 'text';
+            this.endDateInput.readOnly = true;
+            this.container.appendChild(this.endDateInput);
+            this.endTimeInput = document.createElement('input');
+            this.endTimeInput.type = 'text';
+            this.endTimeInput.className = 'calendar_time_input';
+            this.container.appendChild(this.endTimeInput);
+        }
         this.initiator.addEventListener(this.event, this.switch.bind(this));
+        this.container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('day')) {
+                let target = e.target;
+                if (this.isPeriod && this.startSelectedDay) {
+                    if (parseInt(target.parentNode.parentNode.dataset.number) < this.startSelectedYear ||
+                        parseInt(target.parentNode.dataset.number) < this.startSelectedMonth ||
+                        parseInt(target.dataset.number) < this.startSelectedDay) {
+                        this.startSelectedYear = parseInt(target.parentNode.parentNode.dataset.number);
+                        this.startSelectedMonth = parseInt(target.parentNode.dataset.number);
+                        this.startSelectedDay = parseInt(target.dataset.number);
+                        let date = new Date();
+                        date.setFullYear(this.startSelectedYear);
+                        date.setMonth(this.startSelectedMonth);
+                        date.setDate(this.startSelectedDay);
+                        this.startDateInput.value = date.toISOString().slice(0, 10) + ' ' + date.toISOString().slice(11, 16);
+                        if (this.startTimeInput.value.trim().length == 0) {
+                            this.startTimeInput.value = date.toISOString().slice(11, 16);
+                        }
+                        this.endDateInput.value = '';
+                        this.endTimeInput.value = '';
+                    } else {
+                        this.endSelectedDay = parseInt(target.dataset.number);
+                        this.endSelectedMonth = parseInt(target.parentNode.dataset.number);
+                        this.endSelectedYear = parseInt(target.parentNode.parentNode.dataset.number);
+                        let date = new Date();
+                        date.setFullYear(this.endSelectedYear);
+                        date.setMonth(this.endSelectedMonth);
+                        date.setDate(this.endSelectedDay);
+                        this.endDateInput.value = date.toISOString().slice(0, 10);
+                        if (this.endTimeInput.value.trim().length == 0) {
+                            this.endTimeInput.value = date.toISOString().slice(11, 16);
+                        }
+                    }
+                } else {
+                    this.startSelectedDay = parseInt(target.dataset.number);
+                    this.startSelectedMonth = parseInt(target.parentNode.dataset.number);
+                    this.startSelectedYear = parseInt(target.parentNode.parentNode.dataset.number);
+                    let date = new Date();
+                    date.setFullYear(this.startSelectedYear);
+                    date.setMonth(this.startSelectedMonth);
+                    date.setDate(this.startSelectedDay);
+                    this.startDateInput.value = date.toISOString().slice(0, 10) + ' ' + date.toISOString().slice(11, 16);
+                    if (this.startTimeInput.value.trim().length == 0) {
+                        this.startTimeInput.value = date.toISOString().slice(11, 16);
+                    }
+                }
+            }
+        });
+        if (this.isPeriod) {
+            this.container.addEventListener('mouseover', (e) => {
+                if (e.target.classList.contains('day') && this.startSelectedDay !== null) {
+                    let target = e.target;
+                    let startDayOfCurrentMonth = this.startSelectedDay;
+                    let curEndYearByMouseOver = parseInt(target.parentNode.parentNode.dataset.number);
+                    let curEndMonthByMouseOver = parseInt(target.parentNode.dataset.number);
+                    let curEndDayByMouseOver = parseInt(target.dataset.number);
+                    if (curEndYearByMouseOver < this.startSelectedYear ||
+                        curEndMonthByMouseOver < this.startSelectedMonth ||
+                        curEndDayByMouseOver < this.startSelectedDay) {
+                        if (this.daysToShowInCalendar[this.startSelectedYear][this.startSelectedMonth][this.startSelectedDay].node.classList.contains('in_period')) {
+                            this.daysToShowInCalendar[this.startSelectedYear][this.startSelectedMonth][this.startSelectedDay].node.classList.remove('in_period');
+                        }
+                        return;
+                    }
+                    let endYear = this.endYearByMouseOver !== null && curEndYearByMouseOver < this.endYearByMouseOver ? this.endYearByMouseOver : curEndYearByMouseOver;
+                    let endMonth = this.endMonthByMouseOver !== null && curEndMonthByMouseOver < this.endMonthByMouseOver ? this.endMonthByMouseOver : curEndMonthByMouseOver;
+                    let endDay = this.endDayByMouseOver !== null && curEndDayByMouseOver < this.endDayByMouseOver ? this.endDayByMouseOver : curEndDayByMouseOver;
+                    for (let year = this.startSelectedYear; year <= endYear; year++) {
+                        for (let month = this.startSelectedMonth; month <= endMonth; month++) {
+                            let daysAmountOfCurrentMonth = this.getDaysCountOfMonth(month, year);
+                            let endDayOfMonth = month === endMonth ? endDay : daysAmountOfCurrentMonth;
+                            for (let day = startDayOfCurrentMonth; day <= endDayOfMonth; day++) {
+                                if (year <= curEndYearByMouseOver && month <= curEndMonthByMouseOver && day <= curEndDayByMouseOver) {
+                                    if (!this.daysToShowInCalendar[year][month][day].node.classList.contains('in_period')) {
+                                        this.daysToShowInCalendar[year][month][day].node.classList.add('in_period');
+                                    }
+                                } else {
+                                    if (this.daysToShowInCalendar[year][month][day].node.classList.contains('in_period')) {
+                                        this.daysToShowInCalendar[year][month][day].node.classList.remove('in_period');
+                                    }
+                                }
+                            }
+                            startDayOfCurrentMonth = 1;
+                        }
+                    }
+                    this.endYearByMouseOver = curEndYearByMouseOver;
+                    this.endMonthByMouseOver = curEndMonthByMouseOver;
+                    this.endDayByMouseOver = curEndDayByMouseOver;
+                }
+            });
+        }
+    }
+
+    /**
+    * Обновление даты начала периода
+    */
+    this.updateStartDate = function (date, time) {
+        if (date !== undefined) {
+            this.startDateInput.value = date + ' ' + date.toISOString().slice(11, 16);
+        }
+        if (time !== undefined) {
+            this.startDateInput.value = date.toISOString().slice(0, 10) + ' ' + time;
+        }
+    }
+    /**
+   * Обновление даты конца периода
+   */
+    this.updateEndDate = function (date, time) {
+        if (date !== undefined) {
+            this.endDateInput.value = date + ' ' + date.toISOString().slice(11, 16);
+        }
+        if (time !== undefined) {
+            this.endDateInput.value = date.toISOString().slice(0, 10) + ' ' + time;
+        }
     }
     /**
      * Инициализация массивов годов, месяцев и дней, в том числе с учетом разрешенного
@@ -143,60 +311,71 @@ var Calendar = function (initiator, event, isPeriod) {
         let day = date.getDate();
         for (let index = year - Math.floor(this.yearsRange / 2); index < year + Math.floor(this.yearsRange / 2); index++) {
             this.years.push(index);
-            this.startYear = this.years[0];
-            this.endYear = this.years[this.years.length - 1];
+            this.startPossibleYear = this.years[0];
+            this.endPossibleYear = this.years[this.years.length - 1];
         }
-        // Инициализация расчета разрешенного периода выбора дат
-        let startDay = day - Math.floor(this.daysRangeToChoose / 2);
-        let endDay = day + Math.floor(this.daysRangeToChoose / 2);
-
-        this.yearsToChoose[year] = [month];
-        let curYear = year;
-        let curMonthNumber = month;
-        let startYearToChoose = year;
-        let endYearToChoose = year;
-        if (startDay < 0) {
-            let leftDaysCount = startDay;
-            while (leftDaysCount < 0) {
-                curMonthNumber--;
-                if (curMonthNumber < 0) {
-                    curMonthNumber = 11;
-                    curYear--;
-                    this.yearsToChoose[curYear] = [];
+        this.daysToShowInCalendar[year] = [];
+        this.daysToShowInCalendar[year][month] = [];
+        let startPossibleDayNumberInMonth = 1;
+        let endPossibleDayNumberInMonth = this.getDaysCountOfMonth(month, year);
+        // Если передана настройка - Предоставлять выбор дат только из определенного периода относительно текущей даты
+        if (this.isPossibleRange) {
+            this.possibleDays[year] = [];
+            this.possibleDays[year][month] = [];
+            // Инициализация расчета разрешенного периода выбора дат
+            startPossibleDayNumberInMonth = day - Math.floor(this.possibleDaysRange / 2);
+            endPossibleDayNumberInMonth = day + Math.floor(this.possibleDaysRange / 2);
+            let curYear = year;
+            let curMonthNumber = month;
+            this.startPossibleYear = year;
+            this.endPossibleYear = year;
+            if (startPossibleDayNumberInMonth < 0) {
+                let leftDaysCount = startPossibleDayNumberInMonth;
+                while (leftDaysCount < 0) {
+                    curMonthNumber--;
+                    if (curMonthNumber < 0) {
+                        curMonthNumber = 11;
+                        curYear--;
+                        this.possibleDays[curYear] = [];
+                    }
+                    this.possibleDays[curYear][curMonthNumber] = [];
+                    leftDaysCount = leftDaysCount + this.getDaysCountOfMonth(curMonthNumber, curYear);
                 }
-                this.yearsToChoose[curYear].unshift(curMonthNumber);
-                leftDaysCount = leftDaysCount + this.getDaysCountOfMonth(curMonthNumber, curYear);
+                startPossibleDayNumberInMonth = leftDaysCount;
+                this.startPossibleYear = curYear;
             }
-            startDay = leftDaysCount;
-            startYearToChoose = curYear;
-        }
-        if (endDay > this.getDaysCountOfMonth(month, year)) {
-            curYear = year;
-            curMonthNumber = month;
-            leftDaysCount = endDay;
-            while (leftDaysCount > this.getDaysCountOfMonth(curMonthNumber, curYear)) {
-                curMonthNumber++
-                if (curMonthNumber > 11) {
-                    curMonthNumber = 0;
-                    curYear++;
-                    this.yearsToChoose[curYear] = [];
+            if (endPossibleDayNumberInMonth > this.getDaysCountOfMonth(month, year)) {
+                curYear = year;
+                curMonthNumber = month;
+                leftDaysCount = endPossibleDayNumberInMonth;
+                while (leftDaysCount > this.getDaysCountOfMonth(curMonthNumber, curYear)) {
+                    curMonthNumber++
+                    if (curMonthNumber > 11) {
+                        curMonthNumber = 0;
+                        curYear++;
+                        this.possibleDays[curYear] = [];
+                    }
+                    this.possibleDays[curYear][curMonthNumber] = [];
+                    leftDaysCount = leftDaysCount - this.getDaysCountOfMonth(curMonthNumber, curYear);
                 }
-                this.yearsToChoose[curYear].push(curMonthNumber);
-                leftDaysCount = leftDaysCount - this.getDaysCountOfMonth(curMonthNumber, curYear);
+                endPossibleDayNumberInMonth = leftDaysCount;
+                this.endPossibleYear = curYear;
             }
-            endDay = leftDaysCount;
-            endYearToChoose = curYear;
+            this.daysToShowInCalendar = this.possibleDays;
         }
         let isInPeriod = true;
-        this.yearsToChoose.forEach(function (months, yearIndex) {
-            date.setFullYear(yearIndex);
-            for (let monthIndex = 0; monthIndex < months.length; monthIndex++) {
-                date.setMonth(months[monthIndex]);
-                this.daysToChoose.push({ 'month': months[monthIndex], 'days': [] });
-                for (let day = 1; day <= this.getDaysCountOfMonth(months[monthIndex], yearIndex); day++) {
+        this.daysToShowInCalendar.forEach(function (months, year) {
+            date.setFullYear(year);
+            months.forEach(function (days, month) {
+                date.setMonth(month);
+                for (let day = 1; day <= this.getDaysCountOfMonth(month, year); day++) {
+                    let dayContainerNode = document.createElement('span');
+                    dayContainerNode.className = 'day';
+                    dayContainerNode.dataset.number = day;
+                    dayContainerNode.innerHTML = day;
                     isInPeriod = true;
-                    if ((yearIndex == startYearToChoose && monthIndex == 0 && day < startDay) ||
-                        (yearIndex == endYearToChoose && monthIndex == months.length - 1 && day > endDay)) {
+                    if (this.isPeriod && (year == this.startPossibleYear && monthIndex == 0 && day < startPossibleDayNumberInMonth) ||
+                        (year == this.endPossibleYear && monthIndex == months.length - 1 && day > endPossibleDayNumberInMonth)) {
                         isInPeriod = false;
                     }
                     date.setDate(day);
@@ -205,14 +384,13 @@ var Calendar = function (initiator, event, isPeriod) {
                     if (dayOfWeek < 0) {
                         dayOfWeek = 6;
                     }
-                    let dayInfo = { 'day': day, 'isInPeriod': isInPeriod, 'isWeekEnd': dayOfWeek == 5 || dayOfWeek == 6 };
+                    let dayInfo = { 'node': dayContainerNode, 'isInPeriod': isInPeriod, 'isWeekEnd': dayOfWeek == 5 || dayOfWeek == 6, 'isInDOM': false };
                     if (day == 1) {
                         dayInfo.margin = (dayOfWeek / 7) * 100;
                     }
-                    this.daysToChoose[this.daysToChoose.length - 1].days.push(dayInfo);
-                }
-                dayNumber = 1;
-            }
+                    this.daysToShowInCalendar[year][month][day] = dayInfo;
+                };
+            }.bind(this));
         }.bind(this));
     }
     /**
@@ -256,6 +434,5 @@ function getNodeWidth(node, parentWidth) {
     return nodeWidth;
 }
 let initiator = document.getElementById('select_date');
-let c = new Calendar(initiator, 'click');
+let c = new Calendar(initiator, 'click', true);
 c.init();
-

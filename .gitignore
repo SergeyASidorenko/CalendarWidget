@@ -1,4 +1,5 @@
 .vscode/
+.metals/
 .idea/
 *.exe
 &.log

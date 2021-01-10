@@ -4,7 +4,17 @@
     width: 30%;
 }
 
-.year {
+#calendar input[type="text"] {
+    background-color: #333;
+    color: #eee;
+    border: 1px solid black;
+    outline: none;
+    padding: .25em;
+    display: block;
+    margin: 10px auto;
+}
+
+#calendar .year {
     background: linear-gradient(45deg, #363, #696);
     color: white;
     transition: all .4s;
@@ -13,23 +23,23 @@
     display: inline-block;
 }
 
-.year:hover {
+#calendar .year:hover {
     background: linear-gradient(45deg, #696, #7a7);
 }
 
-.days_in_month {
+#calendar .month_container {
     float: left;
     background: #336;
     width: 50%;
 }
 
-.days_in_month h4 {
+#calendar .month_container h4 {
     text-align: center;
     color: white;
     font-variant: small-caps;
 }
 
-.day {
+#calendar .day {
     width: 14.2857%;
     background-color: #444;
     color: white;
@@ -39,19 +49,33 @@
     box-sizing: border-box;
 }
 
-.day.active {
+#calendar .day.active {
     cursor: pointer;
     background: #336;
 }
 
-.day.weekend {
+#calendar .day.weekend {
     background: #633;
 }
 
-.day.active:hover {
+#calendar .day.active:hover {
     background: #669;
 }
 
-.day.weekend:hover {
+#calendar .day.weekend:hover {
     background: #966;
+}
+
+#calendar .day.in_period {
+    background: #eee;
+    color: #333;
+}
+#calendar .day.in_period {
+    background: #ddd;
+    color: #333;
+}
+
+#calendar .calendar_time_input {
+    float: left;
+    width: 80px;
 }
