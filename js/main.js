@@ -4,9 +4,9 @@
  * @param  initiator 
  * @param {*} event 
  */
-var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
+var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDaysWithARange) {
     // Флаг указывающий, что нужно создать календарь с возможностью выбора диапазона
-    this.isPossibleRange = isPossibleRange;
+    this.isLimitDaysWithARange = isLimitDaysWithARange;
     // HTML узел, который будеит содержат всю разметку календаря
     this.container = null;
     this.yearsContainer = null;
@@ -15,6 +15,8 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
     //-------------------------------------------
     this.startPossibleYear = null;
     this.endPossibleYear = null;
+    this.startPossibleMonth = null;
+    this.endPossibleMonth = null;
     this.startPossibleDay = null;
     this.endPossibleDay = null;
     //-------------------------------------------
@@ -58,7 +60,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
     this.initiator = initiator;
     this.event = event;
     // Флаг, указывающий, нужно ли пользователю выбирать период, а не просто одну дату
-    this.isPeriod = isPeriod;
+    this.isSelectDaysRangePossible = isSelectDaysRangePossible;
     this.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     this.dayContainerNodes = [];
     /**
@@ -77,14 +79,14 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
             return 31;
         }
         return month % 2 == 0 ? 31 : 30;
-    }
+    };
     /**
      * Определение русского наименования месяца
      * @param {*} month 
      */
     this.getMonthName = function (month) {
         return this.monthNames[month];
-    }
+    };
     /**
      * Метод определения, отображен ли в момент вызова календарь в окне браузере
      */
@@ -144,7 +146,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
                 }.bind(this));
             }.bind(this));
         }.bind(this));
-    }
+    };
     /**
      * Инициализация календаря
      * Создание и добавление нужных узлов в дерево HTML документа
@@ -174,7 +176,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
         this.startTimeInput.type = 'text';
         this.startTimeInput.className = 'calendar_time_input';
         this.container.appendChild(this.startTimeInput);
-        if (this.isPeriod) {
+        if (this.isSelectDaysRangePossible) {
             this.endDateInput = document.createElement('input');
             this.endDateInput.type = 'text';
             this.endDateInput.readOnly = true;
@@ -188,7 +190,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
         this.container.addEventListener('click', (e) => {
             if (e.target.classList.contains('day')) {
                 let target = e.target;
-                if (this.isPeriod && this.startSelectedDay) {
+                if (this.isSelectDaysRangePossible && this.startSelectedDay) {
                     if (parseInt(target.parentNode.parentNode.dataset.number) < this.startSelectedYear ||
                         parseInt(target.parentNode.dataset.number) < this.startSelectedMonth ||
                         parseInt(target.dataset.number) < this.startSelectedDay) {
@@ -233,51 +235,57 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
                 }
             }
         });
-        if (this.isPeriod) {
+        if (this.isSelectDaysRangePossible) {
             this.container.addEventListener('mouseover', (e) => {
                 if (e.target.classList.contains('day') && this.startSelectedDay !== null) {
                     let target = e.target;
                     let startDayOfCurrentMonth = this.startSelectedDay;
-                    let curEndYearByMouseOver = parseInt(target.parentNode.parentNode.dataset.number);
-                    let curEndMonthByMouseOver = parseInt(target.parentNode.dataset.number);
-                    let curEndDayByMouseOver = parseInt(target.dataset.number);
-                    if (curEndYearByMouseOver < this.startSelectedYear ||
-                        curEndMonthByMouseOver < this.startSelectedMonth ||
-                        curEndDayByMouseOver < this.startSelectedDay) {
-                        if (this.daysToShowInCalendar[this.startSelectedYear][this.startSelectedMonth][this.startSelectedDay].node.classList.contains('in_period')) {
-                            this.daysToShowInCalendar[this.startSelectedYear][this.startSelectedMonth][this.startSelectedDay].node.classList.remove('in_period');
+                    // Конечный год диапазона дат, выделенных цветом
+                    let endYearByMouseOver = parseInt(target.parentNode.parentNode.dataset.number);
+                    // Конечный месяц диапазона дат, выделенных цветом
+                    let endMonthByMouseOver = parseInt(target.parentNode.dataset.number);
+                    // Конечная дата диапазона дат, выделенных цветом
+                    let endDayByMouseOver = parseInt(target.dataset.number);
+                    if (endDayByMouseOver < this.startSelectedDay ||
+                        endMonthByMouseOver < this.startSelectedMonth ||
+                        endYearByMouseOver < this.startSelectedYear) {
+                        // Снимаем подсветку цветом у дней, которые в настоящий момент подсвечены
+                        this.unHighLightDays()
+                        if (this.daysToShowInCalendar[this.startSelectedYear][this.startSelectedMonth][this.startSelectedDay].node.classList.contains('in_selected_period')) {
+                            this.daysToShowInCalendar[this.startSelectedYear][this.startSelectedMonth][this.startSelectedDay].node.classList.remove('in_selected_period');
                         }
                         return;
                     }
-                    let endYear = this.endYearByMouseOver !== null && curEndYearByMouseOver < this.endYearByMouseOver ? this.endYearByMouseOver : curEndYearByMouseOver;
-                    let endMonth = this.endMonthByMouseOver !== null && curEndMonthByMouseOver < this.endMonthByMouseOver ? this.endMonthByMouseOver : curEndMonthByMouseOver;
-                    let endDay = this.endDayByMouseOver !== null && curEndDayByMouseOver < this.endDayByMouseOver ? this.endDayByMouseOver : curEndDayByMouseOver;
-                    for (let year = this.startSelectedYear; year <= endYear; year++) {
-                        for (let month = this.startSelectedMonth; month <= endMonth; month++) {
-                            let daysAmountOfCurrentMonth = this.getDaysCountOfMonth(month, year);
-                            let endDayOfMonth = month === endMonth ? endDay : daysAmountOfCurrentMonth;
+
+                    for (let year = this.startSelectedYear; year <= endYearByMouseOver; year++) {
+                        for (let month = this.startSelectedMonth; month <= endMonthByMouseOver; month++) {
                             for (let day = startDayOfCurrentMonth; day <= endDayOfMonth; day++) {
-                                if (year <= curEndYearByMouseOver && month <= curEndMonthByMouseOver && day <= curEndDayByMouseOver) {
-                                    if (!this.daysToShowInCalendar[year][month][day].node.classList.contains('in_period')) {
-                                        this.daysToShowInCalendar[year][month][day].node.classList.add('in_period');
+                                if (year <= endYearByMouseOver && month <= endMonthByMouseOver && day <= endDayByMouseOver) {
+                                    if (!this.daysToShowInCalendar[year][month][day].node.classList.contains('in_selected_period')) {
+                                        this.daysToShowInCalendar[year][month][day].node.classList.add('in_selected_period');
                                     }
                                 } else {
-                                    if (this.daysToShowInCalendar[year][month][day].node.classList.contains('in_period')) {
-                                        this.daysToShowInCalendar[year][month][day].node.classList.remove('in_period');
+                                    if (this.daysToShowInCalendar[year][month][day].node.classList.contains('in_selected_period')) {
+                                        this.daysToShowInCalendar[year][month][day].node.classList.remove('in_selected_period');
                                     }
                                 }
                             }
                             startDayOfCurrentMonth = 1;
                         }
                     }
-                    this.endYearByMouseOver = curEndYearByMouseOver;
-                    this.endMonthByMouseOver = curEndMonthByMouseOver;
-                    this.endDayByMouseOver = curEndDayByMouseOver;
+                    this.endYearByMouseOver = endYearByMouseOver;
+                    this.endMonthByMouseOver = endMonthByMouseOver;
+                    this.endDayByMouseOver = endDayByMouseOver;
+                }
+            });
+            this.container.addEventListener('mouseout', (e) => {
+                if (e.target == this) {
+                    console.log('test');
                 }
             });
         }
-    }
-
+    };
+    this.unHighLightDays = function () { };
     /**
     * Обновление даты начала периода
     */
@@ -288,7 +296,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
         if (time !== undefined) {
             this.startDateInput.value = date.toISOString().slice(0, 10) + ' ' + time;
         }
-    }
+    };
     /**
    * Обновление даты конца периода
    */
@@ -299,7 +307,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
         if (time !== undefined) {
             this.endDateInput.value = date.toISOString().slice(0, 10) + ' ' + time;
         }
-    }
+    };
     /**
      * Инициализация массивов годов, месяцев и дней, в том числе с учетом разрешенного
      * диапазона дат
@@ -319,7 +327,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
         let startPossibleDayNumberInMonth = 1;
         let endPossibleDayNumberInMonth = this.getDaysCountOfMonth(month, year);
         // Если передана настройка - Предоставлять выбор дат только из определенного периода относительно текущей даты
-        if (this.isPossibleRange) {
+        if (this.isLimitDaysWithARange) {
             this.possibleDays[year] = [];
             this.possibleDays[year][month] = [];
             // Инициализация расчета разрешенного периода выбора дат
@@ -329,6 +337,8 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
             let curMonthNumber = month;
             this.startPossibleYear = year;
             this.endPossibleYear = year;
+            this.startPossibleMonth = month;
+            this.endPossibleMonth = month;
             if (startPossibleDayNumberInMonth < 0) {
                 let leftDaysCount = startPossibleDayNumberInMonth;
                 while (leftDaysCount < 0) {
@@ -343,6 +353,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
                 }
                 startPossibleDayNumberInMonth = leftDaysCount;
                 this.startPossibleYear = curYear;
+                this.startPossibleMonth = curMonthNumber;
             }
             if (endPossibleDayNumberInMonth > this.getDaysCountOfMonth(month, year)) {
                 curYear = year;
@@ -360,6 +371,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
                 }
                 endPossibleDayNumberInMonth = leftDaysCount;
                 this.endPossibleYear = curYear;
+                this.endPossibleMonth = curMonthNumber;
             }
             this.daysToShowInCalendar = this.possibleDays;
         }
@@ -374,8 +386,8 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
                     dayContainerNode.dataset.number = day;
                     dayContainerNode.innerHTML = day;
                     isInPeriod = true;
-                    if (this.isPeriod && (year == this.startPossibleYear && monthIndex == 0 && day < startPossibleDayNumberInMonth) ||
-                        (year == this.endPossibleYear && monthIndex == months.length - 1 && day > endPossibleDayNumberInMonth)) {
+                    if (this.isSelectDaysRangePossible && (year == this.startPossibleYear && month == this.startPossibleMonth && day < startPossibleDayNumberInMonth) ||
+                        (year == this.endPossibleYear && month == this.endPossibleMonth && day > endPossibleDayNumberInMonth)) {
                         isInPeriod = false;
                     }
                     date.setDate(day);
@@ -392,20 +404,20 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
                 };
             }.bind(this));
         }.bind(this));
-    }
+    };
     /**
      * Отображение календаря в окне браузера
      */
     this.hide = function () {
         this.container.style.display = 'none';
-    }
+    };
     /**
      * 
      *  Скрытие календаря в окне браузера
      */
     this.show = function () {
         this.container.style.display = 'block';
-    }
+    };
     /**
      * Переключение каледаря из видимого состояния в невидимое или наоборот
      */
@@ -415,7 +427,7 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
         } else {
             this.hide();
         }
-    }
+    };
 }
 /**
  * Вспомогательная функция расчета размера элемента 
@@ -434,5 +446,5 @@ function getNodeWidth(node, parentWidth) {
     return nodeWidth;
 }
 let initiator = document.getElementById('select_date');
-let c = new Calendar(initiator, 'click', true);
+let c = new Calendar(initiator, 'click', true, true);
 c.init();

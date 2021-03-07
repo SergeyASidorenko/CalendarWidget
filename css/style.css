@@ -66,11 +66,11 @@
     background: #966;
 }
 
-#calendar .day.in_period {
+#calendar .day.in_selected_period {
     background: #eee;
     color: #333;
 }
-#calendar .day.in_period {
+#calendar .day.in_selected_period {
     background: #ddd;
     color: #333;
 }
