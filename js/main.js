@@ -190,7 +190,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
         }
         this.initiator.addEventListener(this.event, this.switch.bind(this));
         this.container.addEventListener('click', (e) => {
-            if (e.target.classList.contains('day')) {
+            if (e.target.classList.contains('day') && e.target.classList.contains('active')) {
                 let target = e.target;
                 // Конечный год диапазона дат, выделенных цветом
                 let curYear = parseInt(target.parentNode.parentNode.dataset.number);
@@ -200,11 +200,9 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
                 let curDay = parseInt(target.dataset.number);
                 if (this.isSelectDaysRangePossible) {
                     if (this.startSelectedDay !== null && this.endSelectedDay !== null) {
-                        this.startSelectedDay = null;
-                        this.endSelectedDay = null;
                         this.unHighLightDays();
-                        this.clearStartDate();
-                        this.clearEndDate();
+                        this.clearStartDateTime();
+                        this.clearEndDateTime();
                     }
                     if (this.startSelectedDay !== null && this.endSelectedDay === null) {
                         if ((this.startSelectedYear <= curYear &&
@@ -319,8 +317,12 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
                 if (month < this.endSelectedMonth) {
                     endDayInCurIteration = this.getDaysCountOfMonth(year, month);
                 } else {
-                    endDayInCurIteration = this.endSelectedMonth;
+                    endDayInCurIteration = this.endSelectedDay;
                 }
+                console.log(year);
+                console.log(month);
+                console.log(startDayInCurIteration);
+                console.log(endDayInCurIteration);
                 for (let day = startDayInCurIteration; day <= endDayInCurIteration; day++) {
                     this.daysToShowInCalendar[year][month][day].node.classList.remove('in_selected_period');
                 }
@@ -362,6 +364,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
     this.clearStartDateTime = function () {
         this.startDateInput.value = '';
         this.startTimeInput.value = '';
+        this.startSelectedDay = this.startSelectedMonth = this.startSelectedYear = null;
     };
     /**
      * Очистка даты и времени конца выбранного периода
@@ -370,6 +373,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
 
         this.endDateInput.value = '';
         this.endTimeInput.value = '';
+        this.endSelectedDay = this.endSelectedMonth = this.endSelectedYear = null;
 
     };
     /**
