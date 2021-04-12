@@ -304,16 +304,16 @@ var Calendar = function (initiator, event, isPeriod, isPossibleRange) {
      * Инициализация массивов годов, месяцев и дней, в том числе с учетом разрешенного
      * диапазона дат
      */
-    this.initDays = function () {
+    this.initDays = function (month, year) {
         let date = new Date();
         let year = date.getFullYear();
         let month = date.getMonth();
         let day = date.getDate();
         for (let index = year - Math.floor(this.yearsRange / 2); index < year + Math.floor(this.yearsRange / 2); index++) {
             this.years.push(index);
-            this.startPossibleYear = this.years[0];
-            this.endPossibleYear = this.years[this.years.length - 1];
         }
+        this.startPossibleYear = this.years[0];
+        this.endPossibleYear = this.years[this.years.length - 1];
         this.daysToShowInCalendar[year] = [];
         this.daysToShowInCalendar[year][month] = [];
         let startPossibleDayNumberInMonth = 1;
