@@ -6,6 +6,7 @@
  */
 var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDaysWithARange) {
     const JANUARY = 0;
+    const FEBRUARY = 1;
     const DECEMBER = 11;
     // Флаг указывающий, что нужно создать календарь с возможностью выбора диапазона
     this.isLimitDaysWithARange = isLimitDaysWithARange;
@@ -21,13 +22,6 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
     this.endPossibleMonth = null;
     this.startPossibleDay = null;
     this.endPossibleDay = null;
-    //-------------------------------------------
-    this.startDisplayedDay = null;
-    this.endDisplayedDay = null;
-    this.startDisplayedMonth = null;
-    this.endDisplayedMonth = null;
-    this.startDisplayedYear = null;
-    this.endDisplayedYear = null;
     //-------------------------------------------
     this.startSelectedYear = null;
     this.endSelectedYear = null;
@@ -71,13 +65,10 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
      * @param {*} year 
      */
     this.getDaysCountOfMonth = function (year, month) {
-        if (month == 1) {
-            if (year === undefined) {
-                year = new Date().getFullYear();
-            }
+        if (month == this.FEBRUARY) {
             return year % 4 == 0 ? 29 : 28;
         }
-        if (month == 11) {
+        if (month == this.DECEMBER) {
             return 31;
         }
         return month % 2 == 0 ? 31 : 30;
@@ -98,12 +89,16 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
     /**
      * Перерисовка календаря на основе новых параметров
      */
-    this.redraw = function () {
+    this.draw = function (year, month, day) {
+        this.initDays(year, month, day);
         // Заполняем секцию выбора годов
         this.years.forEach(function (year) {
             let yearNode = document.createElement('span');
             yearNode.className = 'year';
             yearNode.innerHTML = year;
+            if (this.yearNodes[year] === undefined) {
+                this.yearNodes.push(yearNode);
+            }
             this.yearsContainer.appendChild(yearNode);
         }.bind(this));
         // Заполняем сам календарь днями
@@ -168,8 +163,6 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
         this.container.appendChild(this.yearsContainer);
         this.container.appendChild(this.monthsContainer);
         this.container.appendChild(this.daysContainer);
-        this.initDays();
-        this.redraw();
         this.startDateInput = document.createElement('input');
         this.startDateInput.type = 'text';
         this.startDateInput.readOnly = true;
@@ -189,74 +182,72 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
             this.container.appendChild(this.endTimeInput);
         }
         this.initiator.addEventListener(this.event, this.switch.bind(this));
-        this.container.addEventListener('click', (e) => {
-            if (e.target.classList.contains('day') && e.target.classList.contains('active')) {
-                let target = e.target;
-                // Конечный год диапазона дат, выделенных цветом
-                let curYear = parseInt(target.parentNode.parentNode.dataset.number);
-                // Конечный месяц диапазона дат, выделенных цветом
-                let curMonth = parseInt(target.parentNode.dataset.number);
-                // Конечная дата диапазона дат, выделенных цветом
-                let curDay = parseInt(target.dataset.number);
-                if (this.isSelectDaysRangePossible) {
-                    if (this.startSelectedDay !== null && this.endSelectedDay !== null) {
-                        this.unHighLightDays();
-                        this.clearStartDateTime();
-                        this.clearEndDateTime();
-                    }
-                    if (this.startSelectedDay !== null && this.endSelectedDay === null) {
-                        if ((this.startSelectedYear <= curYear &&
-                            (this.startSelectedMonth <= curMonth || (this.startSelectedMonth > curMonth && this.startSelectedYear < curYear)) &&
-                            (this.startSelectedDay <= curDay || (this.startSelectedDay > curDay && this.startSelectedMonth < curMonth)))) {
-                            this.endSelectedYear = curYear;
-                            this.endSelectedMonth = curMonth;
-                            this.endSelectedDay = curDay;
-                            this.updateEndDateTime();
-                        } else {
-                            this.startSelectedYear = curYear;
-                            this.startSelectedMonth = curMonth;
-                            this.startSelectedDay = curDay;
-                            this.updateStartDateTime();
-                            this.clearEndDateTime();
-                        }
-                    }
-                    else {
-                        this.startSelectedYear = curYear;
-                        this.startSelectedMonth = curMonth;
-                        this.startSelectedDay = curDay;
-                        this.updateStartDateTime();
-                    }
-                }
-            }
-        });
+        this.container.addEventListener('click', this.onMouseClick.bind(this));
         if (this.isSelectDaysRangePossible) {
-            this.container.addEventListener('mouseover', (e) => {
-                if (e.target.classList.contains('day') && this.startSelectedDay !== null && this.endSelectedDay === null) {
-                    let target = e.target;
-                    // Конечный год диапазона дат, выделенных цветом
-                    let newEndYearInRangeByMouseOver = parseInt(target.parentNode.parentNode.dataset.number);
-                    // Конечный месяц диапазона дат, выделенных цветом
-                    let newEndMonthInRangeByMouseOver = parseInt(target.parentNode.dataset.number);
-                    // Конечная дата диапазона дат, выделенных цветом
-                    let newEndDayInRangeByMouseOver = parseInt(target.dataset.number);
-                    this.updateHighLightedDays(newEndYearInRangeByMouseOver, newEndMonthInRangeByMouseOver, newEndDayInRangeByMouseOver);
-                    this.endYearInRangeByMouseOver = newEndYearInRangeByMouseOver;
-                    this.endMonthInRangeByMouseOver = newEndMonthInRangeByMouseOver;
-                    this.endDayInRangeByMouseOver = newEndDayInRangeByMouseOver;
-                }
-            });
+            this.container.addEventListener('mouseover', this.onMouseOver.bind(this));
+        }
+        let date = new Date();
+        let year = date.getFullYear();
+        let month = date.getMonth();
+        let day = date.getDate();
+        this.draw(year, month, day);
+    };
+    this.onMouseOver = function (e) {
+        if (e.target.classList.contains('day') && this.startSelectedDay !== null && this.endSelectedDay === null) {
+            let target = e.target;
+            // Конечный год диапазона дат, выделенных цветом
+            let newEndYearInRangeByMouseOver = parseInt(target.parentNode.parentNode.dataset.number);
+            // Конечный месяц диапазона дат, выделенных цветом
+            let newEndMonthInRangeByMouseOver = parseInt(target.parentNode.dataset.number);
+            // Конечная дата диапазона дат, выделенных цветом
+            let newEndDayInRangeByMouseOver = parseInt(target.dataset.number);
+            this.updateHighLightedDays(newEndYearInRangeByMouseOver, newEndMonthInRangeByMouseOver, newEndDayInRangeByMouseOver);
+            this.endYearInRangeByMouseOver = newEndYearInRangeByMouseOver;
+            this.endMonthInRangeByMouseOver = newEndMonthInRangeByMouseOver;
+            this.endDayInRangeByMouseOver = newEndDayInRangeByMouseOver;
         }
     };
-    this.updateHighLightedDays = function (newYear, newMonth, newDay) {
+    this.onMouseClick = function (e) {
+        if (e.target.classList.contains('day') && e.target.classList.contains('active')) {
+            let target = e.target;
+            // Конечный год диапазона дат, выделенных цветом
+            let curYear = parseInt(target.parentNode.parentNode.dataset.number);
+            // Конечный месяц диапазона дат, выделенных цветом
+            let curMonth = parseInt(target.parentNode.dataset.number);
+            // Конечная дата диапазона дат, выделенных цветом
+            let curDay = parseInt(target.dataset.number);
+            if (this.isSelectDaysRangePossible) {
+                if (this.startSelectedDay !== null && this.endSelectedDay !== null) {
+                    this.unHighLightDays();
+                    this.clearStartDateTime();
+                    this.clearEndDateTime();
+                }
+                if (this.startSelectedDay !== null && this.endSelectedDay === null) {
+                    if ((this.startSelectedYear <= curYear &&
+                        (this.startSelectedMonth <= curMonth || (this.startSelectedMonth > curMonth && this.startSelectedYear < curYear)) &&
+                        (this.startSelectedDay <= curDay || (this.startSelectedDay > curDay && this.startSelectedMonth < curMonth)))) {
+                        this.updateEndDateTime(curYear, curMonth, curDay);
+                    } else {
+                        this.updateStartDateTime(curYear, curMonth, curDay);
+                        this.clearEndDateTime();
+                    }
+                }
+                else {
+                    this.updateStartDateTime(curYear, curMonth, curDay);
+                }
+            }
+        }
+    };
+    this.updateHighLightedDays = function (newEnd, newMonth, newDay) {
         if ((this.endYearInRangeByMouseOver === null || this.endMonthInRangeByMouseOver === null || this.endDayInRangeByMouseOver === null) ||
-            (this.endYearInRangeByMouseOver <= newYear &&
-                (this.endMonthInRangeByMouseOver <= newMonth || (this.endMonthInRangeByMouseOver > newMonth && this.endYearInRangeByMouseOver < newYear)) &&
+            (this.endYearInRangeByMouseOver <= newEnd &&
+                (this.endMonthInRangeByMouseOver <= newMonth || (this.endMonthInRangeByMouseOver > newMonth && this.endYearInRangeByMouseOver < newEnd)) &&
                 (this.endDayInRangeByMouseOver <= newDay || (this.endDayInRangeByMouseOver > newDay && this.endMonthInRangeByMouseOver < newMonth)))) {
             var startMonthInCurIteration = this.startSelectedMonth;
             var startDayInCurIteration = this.startSelectedDay;
-            for (let year = this.startSelectedYear; year <= newYear; year++) {
+            for (let year = this.startSelectedYear; year <= newEnd; year++) {
                 var endMonthInCurIteration = null;
-                if (year < newYear) {
+                if (year < newEnd) {
                     endMonthInCurIteration = this.DECEMBER;
                 } else {
                     endMonthInCurIteration = newMonth;
@@ -278,7 +269,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
         } else {
             var startMonthInCurIteration = newMonth;
             var startDayInCurIteration = newDay;
-            for (let year = newYear; year <= this.endYearInRangeByMouseOver; year++) {
+            for (let year = newEnd; year <= this.endYearInRangeByMouseOver; year++) {
                 var endMonthInCurIteration = null;
                 if (year < this.endYearInRangeByMouseOver) {
                     endMonthInCurIteration = this.DECEMBER;
@@ -319,10 +310,6 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
                 } else {
                     endDayInCurIteration = this.endSelectedDay;
                 }
-                console.log(year);
-                console.log(month);
-                console.log(startDayInCurIteration);
-                console.log(endDayInCurIteration);
                 for (let day = startDayInCurIteration; day <= endDayInCurIteration; day++) {
                     this.daysToShowInCalendar[year][month][day].node.classList.remove('in_selected_period');
                 }
@@ -334,7 +321,10 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
     /**
     * Обновление даты начала выбранного периода
     */
-    this.updateStartDateTime = function () {
+    this.updateStartDateTime = function (year, month, day) {
+        this.startSelectedYear = year;
+        this.startSelectedMonth = month;
+        this.startSelectedDay = day;
         let date = new Date();
         date.setFullYear(this.startSelectedYear);
         date.setMonth(this.startSelectedMonth);
@@ -347,7 +337,10 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
     /**
    * Обновление даты и времени конца выбранного периода
    */
-    this.updateEndDateTime = function () {
+    this.updateEndDateTime = function (year, month, day) {
+        this.endSelectedYear = year;
+        this.endSelectedMonth = month;
+        this.endSelectedDay = day;
         let date = new Date();
         date.setFullYear(this.endSelectedYear);
         date.setMonth(this.endSelectedMonth);
@@ -380,11 +373,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
      * Инициализация массивов годов, месяцев и дней, в том числе с учетом разрешенного
      * диапазона дат
      */
-    this.initDays = function () {
-        let date = new Date();
-        let year = date.getFullYear();
-        let month = date.getMonth();
-        let day = date.getDate();
+    this.initDays = function (year, month, day) {
         for (let index = year - Math.floor(this.yearsRange / 2); index < year + Math.floor(this.yearsRange / 2); index++) {
             this.years.push(index);
             this.startPossibleYear = this.years[0];
@@ -496,6 +485,12 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
             this.hide();
         }
     };
+    this.slideLeft = function (container) {
+
+    }
+    this.slideRight = function (container) {
+
+    }
 }
 /**
  * Вспомогательная функция расчета размера элемента 
