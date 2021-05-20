@@ -52,6 +52,8 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
     this.years = [];
     // Массив годов, доступных для выбора пользователем
     this.possibleYears = [];
+    // Массив узлов, содержащих долступные к выбору года
+    this.yearNodes = [];
 
     this.initiator = initiator;
     this.event = event;
@@ -87,16 +89,19 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
         return window.getComputedStyle(this.container).display != 'none';
     };
     /**
+     * @param year - текущий год
+     * @param month - текущий месяц
+     * @param day - текущий день
      * Перерисовка календаря на основе новых параметров
      */
     this.draw = function (year, month, day) {
         this.initDays(year, month, day);
-        // Заполняем секцию выбора годов
+        // Заполняем секцию выбора возможных годов
         this.years.forEach(function (year) {
             let yearNode = document.createElement('span');
             yearNode.className = 'year';
             yearNode.innerHTML = year;
-            if (this.yearNodes[year] === undefined) {
+            if (!(year in this.yearNodes)) {
                 this.yearNodes.push(yearNode);
             }
             this.yearsContainer.appendChild(yearNode);
@@ -171,6 +176,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
         this.startTimeInput.type = 'text';
         this.startTimeInput.className = 'calendar_time_input';
         this.container.appendChild(this.startTimeInput);
+        // Если разрешается ввод диапазона дат - создаем новый input
         if (this.isSelectDaysRangePossible) {
             this.endDateInput = document.createElement('input');
             this.endDateInput.type = 'text';
@@ -181,8 +187,12 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
             this.endTimeInput.className = 'calendar_time_input';
             this.container.appendChild(this.endTimeInput);
         }
+        // Добавляем событие, по которому будет отображаться календарь
         this.initiator.addEventListener(this.event, this.switch.bind(this));
+        // Добавляем событие обработки нажатий левой кнопки мыши внутри календаря
         this.container.addEventListener('click', this.onMouseClick.bind(this));
+        // Если доступен выбор диапазона дат, также добавляем обработчик на перемещение мыши - чтобы
+        // была подсветка диапазона дат
         if (this.isSelectDaysRangePossible) {
             this.container.addEventListener('mouseover', this.onMouseOver.bind(this));
         }
@@ -374,8 +384,9 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
      * диапазона дат
      */
     this.initDays = function (year, month, day) {
-        for (let index = year - Math.floor(this.yearsRange / 2); index < year + Math.floor(this.yearsRange / 2); index++) {
-            this.years.push(index);
+        // Сперва заполняем возможный для выбор диапазон годов
+        for (let yearInPossibleRange = year - Math.floor(this.yearsRange / 2); yearInPossibleRange < year + Math.floor(this.yearsRange / 2); yearInPossibleRange++) {
+            this.years.push(yearInPossibleRange);
             this.startPossibleYear = this.years[0];
             this.endPossibleYear = this.years[this.years.length - 1];
         }
@@ -433,6 +444,7 @@ var Calendar = function (initiator, event, isSelectDaysRangePossible, isLimitDay
             this.daysToShowInCalendar = this.possibleDays;
         }
         let isInPeriod = true;
+        var date = new Date();
         this.daysToShowInCalendar.forEach(function (months, year) {
             date.setFullYear(year);
             months.forEach(function (days, month) {
