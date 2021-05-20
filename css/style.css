@@ -1,26 +1,26 @@
 #calendar {
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-    position: absolute;
-    width: 30%;
+    position   : absolute;
+    width      : 30%;
 }
 
 #calendar input[type="text"] {
     background-color: #333;
-    color: #eee;
-    border: 1px solid black;
-    outline: none;
-    padding: .25em;
-    display: block;
-    margin: 10px auto;
+    color           : #eee;
+    border          : 1px solid black;
+    outline         : none;
+    padding         : .25em;
+    display         : block;
+    margin          : 10px auto;
 }
 
 #calendar .year {
     background: linear-gradient(45deg, #363, #696);
-    color: white;
+    color     : white;
     transition: all .4s;
-    padding: .1em;
-    cursor: pointer;
-    display: inline-block;
+    padding   : .1em;
+    cursor    : pointer;
+    display   : inline-block;
 }
 
 #calendar .year:hover {
@@ -28,37 +28,40 @@
 }
 
 #calendar .month_container {
-    float: left;
+    float     : left;
     background: #336;
-    width: 50%;
+    width     : 50%;
 }
 
 #calendar .month_container h4 {
-    text-align: center;
-    color: white;
+    text-align  : center;
+    color       : white;
     font-variant: small-caps;
 }
 
-#calendar .day {
-    width: 14.2857%;
-    background-color: #444;
-    color: white;
-    transition: background-color .4s;
-    padding: .1em;
-    display: inline-block;
-    box-sizing: border-box;
-}
 
-#calendar .day.active {
-    cursor: pointer;
-    background: #336;
+
+#calendar .day {
+    width           : 14.2857%;
+    cursor          : pointer;
+    background-color: #336;
+    color           : white;
+    transition      : background-color .4s;
+    padding         : .1em;
+    display         : inline-block;
+    box-sizing      : border-box;
 }
 
 #calendar .day.weekend {
     background: #633;
 }
 
-#calendar .day.active:hover {
+#calendar .day.unactive {
+    background-color: #444;
+    cursor: default;
+}
+
+#calendar .day:hover {
     background: #669;
 }
 
@@ -66,13 +69,13 @@
     background: #966;
 }
 
-#calendar .day.in_selected_period {
-    background: #eee;
-    color: #333;
+#calendar .day.unactive:hover {
+    background-color: #333;
 }
+
 #calendar .day.in_selected_period {
     background: #ddd;
-    color: #333;
+    color     : #333;
 }
 
 #calendar .calendar_time_input {
