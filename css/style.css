@@ -1,7 +1,63 @@
+#container {
+    background-color: #669;
+    width           : 300px;
+    margin          : auto;
+    text-align      : center;
+    padding         : 10px;
+}
+
+#container input {
+    width           : 80%;
+    background-color: transparent;
+    border          : 1px solid white;
+    padding         : .25em .5em;
+    margin          : 10px 0;
+}
+
+#container input::placeholder {
+    color: white;
+}
+
 #calendar {
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     position   : absolute;
     width      : 30%;
+}
+
+#time-selector {
+    font-family     : Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    position        : absolute;
+    width           : 20%;
+    text-align      : center;
+    background-color: teal;
+    color           : white;
+    padding         : 20px;
+}
+
+#time-selector input {
+    width           : 100%;
+    background-color: transparent;
+    border          : 1px solid white;
+    padding         : .25em .5em;
+    margin          : 10px 0;
+    box-sizing      : border-box;
+}
+
+#time-selector #apply-time-button {
+    background-color: #668;
+    border          : 1px solid white;
+    color: white;
+    padding: .5em;
+}
+
+#hours-container {
+    width  : 50%;
+    display: inline-block;
+}
+
+#minutes-container {
+    width  : 50%;
+    display: inline-block;
 }
 
 #calendar input[type="text"] {
@@ -58,7 +114,7 @@
 
 #calendar .day.unactive {
     background-color: #444;
-    cursor: default;
+    cursor          : default;
 }
 
 #calendar .day:hover {
