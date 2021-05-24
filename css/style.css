@@ -46,8 +46,8 @@
 #time-selector #apply-time-button {
     background-color: #668;
     border          : 1px solid white;
-    color: white;
-    padding: .5em;
+    color           : white;
+    padding         : .5em;
 }
 
 #hours-container {
@@ -86,7 +86,6 @@
 #calendar .month_container {
     float     : left;
     background: #336;
-    width     : 50%;
 }
 
 #calendar .month_container h4 {
@@ -106,6 +105,7 @@
     padding         : .1em;
     display         : inline-block;
     box-sizing      : border-box;
+    font-size       : 12px;
 }
 
 #calendar .day.weekend {
@@ -137,4 +137,50 @@
 #calendar .calendar_time_input {
     float: left;
     width: 80px;
+}
+
+#months {
+    position: relative;
+}
+
+#year-indicator {
+    font-size : 26px;
+    color     : white;
+    cursor    : pointer;
+    text-align: center;
+    padding   : .5em;
+}
+
+#leaf-over-future {
+    position   : absolute;
+    top        : 50%;
+    right      : 0;
+    width      : 22px;
+    height     : 22px;
+    padding    : 5px;
+    color      : white;
+    font-size  : 22px;
+    cursor     : pointer;
+    text-align : center;
+    line-height: 100%;
+    border: 1px solid white;
+    border-radius: 100%;
+    margin-top: 10px;
+}
+
+#leaf-over-past {
+    position   : absolute;
+    top        : 50%;
+    left       : 0;
+    width      : 22px;
+    height     : 22px;
+    padding    : 5px;
+    color      : white;
+    font-size  : 22px;
+    cursor     : pointer;
+    text-align : center;
+    line-height: 100%;
+    border: 1px solid white;
+    border-radius: 100%;
+    margin-top: 10px;
 }
