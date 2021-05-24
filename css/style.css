@@ -148,7 +148,9 @@
     color     : white;
     cursor    : pointer;
     text-align: center;
-    padding   : .5em;
+    padding   : 15px 0;
+    background-color: rgb(118, 35, 156);
+    margin: 0;
 }
 
 #leaf-over-future {

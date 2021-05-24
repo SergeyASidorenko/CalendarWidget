@@ -131,7 +131,7 @@ var Calendar = function (date_from_input,
      * @param day - текущий день
      * Перерисовка календаря на основе новых параметров
      */
-    this.draw = function (year, month, day = null) {
+    this.fillCaledarWithDays = function (year, month, day = null) {
         this.initDays(year, month, day);
         // Заполняем секцию выбора возможных годов
         let amountOfPossibleYears = this.possibleYears.length;
@@ -230,11 +230,6 @@ var Calendar = function (date_from_input,
         if (this.isSelectDaysInRangeAllowed) {
             this.dateCalendarContainer.addEventListener('mouseover', this.onMouseOver.bind(this));
         }
-        let date = new Date();
-        this.curDisplayedYear = date.getFullYear();
-        this.curDisplayedMonth = date.getMonth();
-        let day = date.getDate();
-        this.draw(this.curDisplayedYear, this.curDisplayedMonth, day);
     };
     this.onMouseOver = function (e) {
         if (e.target.classList.contains('day') && this.dayFromSelected !== null && this.dayToSelected === null) {
@@ -605,7 +600,7 @@ var Calendar = function (date_from_input,
         } else {
             this.curDisplayedMonth = this.curDisplayedMonth + 1;
         }
-        this.draw(this.curDisplayedYEar, this.curDisplayedMonth);
+        this.fillCaledarWithDays(this.curDisplayedYEar, this.curDisplayedMonth);
     };
 
     /**
@@ -679,6 +674,9 @@ var Calendar = function (date_from_input,
         }
         return true;
     };
+    /**
+     * Создание верстки окна выбора даты (календаря)
+     */
     this.createDateCalendarContainer = function () {
         this.dateCalendarContainer = document.createElement('div');
         this.dateCalendarContainer.id = 'calendar';
@@ -692,7 +690,6 @@ var Calendar = function (date_from_input,
         this.daysContainer.setAttribute('id', 'days');
         this.yearIndicator = document.createElement('p');
         this.yearIndicator.setAttribute('id', 'year-indicator');
-        this.yearIndicator.textContent = this.curDisplayedYear;
         this.leafOverFuture = document.createElement('span');
         this.leafOverFuture.setAttribute('id', 'leaf-over-future');
         this.leafOverFuture.textContent = '>';
@@ -701,12 +698,21 @@ var Calendar = function (date_from_input,
         this.leafOverPast.textContent = '<';
         this.monthsContainer.appendChild(this.leafOverFuture);
         this.monthsContainer.appendChild(this.leafOverPast);
+        this.dateCalendarContainer.appendChild(this.yearIndicator);
         this.dateCalendarContainer.appendChild(this.yearsContainer);
         this.dateCalendarContainer.appendChild(this.monthsContainer);
         this.dateCalendarContainer.appendChild(this.daysContainer);
-        this.dateCalendarContainer.appendChild(this.yearIndicator);
         document.body.appendChild(this.dateCalendarContainer);
+        let date = new Date();
+        this.curDisplayedYear = date.getFullYear();
+        this.curDisplayedMonth = date.getMonth();
+        let day = date.getDate();
+        this.yearIndicator.textContent = this.curDisplayedYear;
+        this.fillCaledarWithDays(this.curDisplayedYear, this.curDisplayedMonth, day);
     };
+    /**
+     * Создание верстки окна выбора времени
+     */
     this.createTimeSelectorContainer = function () {
         this.timeSelectorContainer = document.createElement('div');
         this.timeSelectorContainer.id = 'time-selector';
