@@ -84,12 +84,14 @@
     background: linear-gradient(45deg, #696, #7a7);
 }
 
-#calendar .month_container {
+#calendar .month-container {
     float     : left;
     background: #336;
+    padding   : .5em;
+    box-sizing: border-box;
 }
 
-#calendar .month_container h4 {
+#calendar .month-container h4 {
     text-align  : center;
     color       : white;
     font-variant: small-caps;
@@ -135,7 +137,7 @@
     color     : #333;
 }
 
-#calendar .calendar_time_input {
+#calendar .calendar-time-input {
     float: left;
     width: 80px;
 }
@@ -145,45 +147,66 @@
 }
 
 #year-indicator {
-    font-size : 26px;
-    color     : white;
-    cursor    : pointer;
-    text-align: center;
-    padding   : 15px 0;
+    font-size       : 26px;
+    color           : white;
+    cursor          : pointer;
+    text-align      : center;
+    padding         : 15px 0;
     background-color: rgb(118, 35, 156);
-    margin: 0;
+    margin          : 0;
 }
 
 #leaf-over-future {
-    position   : absolute;
-    top        : 50%;
-    right      : 0;
-    width      : 22px;
-    height     : 22px;
-    padding    : 5px;
-    color      : white;
-    font-size  : 22px;
-    cursor     : pointer;
-    text-align : center;
-    line-height: 100%;
-    border: 1px solid white;
+    position     : absolute;
+    top          : 50%;
+    right        : 0;
+    width        : 22px;
+    height       : 22px;
+    padding      : 5px;
+    color        : white;
+    font-size    : 22px;
+    cursor       : pointer;
+    text-align   : center;
+    line-height  : 100%;
+    border       : 1px solid white;
     border-radius: 100%;
-    margin-top: 10px;
+    margin-top   : 10px;
 }
 
 #leaf-over-past {
-    position   : absolute;
-    top        : 50%;
-    left       : 0;
-    width      : 22px;
-    height     : 22px;
-    padding    : 5px;
-    color      : white;
-    font-size  : 22px;
-    cursor     : pointer;
-    text-align : center;
-    line-height: 100%;
-    border: 1px solid white;
+    position     : absolute;
+    top          : 50%;
+    left         : 0;
+    width        : 22px;
+    height       : 22px;
+    padding      : 5px;
+    color        : white;
+    font-size    : 22px;
+    cursor       : pointer;
+    text-align   : center;
+    line-height  : 100%;
+    border       : 1px solid white;
     border-radius: 100%;
-    margin-top: 10px;
+    margin-top   : 10px;
+}
+
+.month-day-headings {
+    color        : yellow;
+    margin-bottom: .5em;
+}
+
+
+
+.month-day-heading {
+    width     : 14.2857%;
+    display   : inline-block;
+    font-size : 12px;
+    box-sizing: border-box;
+    padding   : .1em;
+}
+
+.month-day-heading:nth-child(6),
+.month-day-heading:nth-child(7) {
+    color        : palevioletred;
+    margin-bottom: .5em;
 }

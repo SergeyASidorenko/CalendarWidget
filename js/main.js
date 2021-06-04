@@ -22,7 +22,10 @@ var Calendar = function (date_from_input,
     isLimitPossibleDaysWithRange = false) {
     this.JANUARY = 0;
     this.FEBRUARY = 1;
+    this.AUGUST = 7;
     this.DECEMBER = 11;
+    this.MAX_DAYS_AMOUNT_IN_MONTH = 31;
+    this.DAYS_IN_WEEK = 7;
     // Возможный диапазон выбора годов
     this.YEARS_RANGE = 48;
     // Флаг указывающий, что нужно создать календарь с возможностью выбора диапазона
@@ -97,6 +100,7 @@ var Calendar = function (date_from_input,
     // Флаг, указывающий, нужно ли пользователю выбирать период, а не просто одну дату
     this.isSelectDaysInRangeAllowed = isSelectDaysInRangeAllowed;
     this.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    this.dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Суб', 'Вс'];
     this.dayNodes = [];
     this.selectTimeEventSource = null;
     this.selectDateEventSource = null;
@@ -107,13 +111,22 @@ var Calendar = function (date_from_input,
      * @param {*} year 
      */
     this.getDaysCountOfMonth = function (year, month) {
-        if (month == this.FEBRUARY) {
-            return year % 4 == 0 ? 29 : 28;
+        if (month <= this.AUGUST) {
+            if (month == this.FEBRUARY) {
+                return year % 4 == 0 ? 29 : 28;
+            } else if (month == this.AUGUST) {
+                return 31;
+            } else {
+                return month % 2 == 0 ? 31 : 30;
+            }
+        } else {
+            if (month == this.DECEMBER) {
+                return 31;
+            } else {
+                return month % 2 == 0 ? 30 : 31;
+            }
         }
-        if (month == this.DECEMBER) {
-            return 31;
-        }
-        return month % 2 == 0 ? 31 : 30;
+
     };
     /**
      * Определение русского наименования месяца
@@ -139,26 +152,32 @@ var Calendar = function (date_from_input,
         var dayOfWeek = 0;
         var isWeekEnd = false;
         var dayNodeCSSMargin = 0;
+        var daysCountOfCurMonth = 0;
         this.displayedYearToMonthsArray.forEach(function (monthsToDisplay, yearToDisplay) {
             date.setFullYear(yearToDisplay);
             monthsToDisplay.forEach(function (days, monthToDisplay) {
+                daysCountOfCurMonth = this.getDaysCountOfMonth(yearToDisplay, monthToDisplay);
                 date.setMonth(monthToDisplay);
                 // Если текущего месяца еще нет в контейнере месяцев -
                 // создаем его
-                let monthHeading = document.createElement('h4');
-                monthHeading.innerHTML = this.getMonthName(monthToDisplay);
+                let monthHeadingNode = document.createElement('h4');
+                monthHeadingNode.textContent = this.getMonthName(monthToDisplay);
+                monthHeadingNode.className = 'month-heading';
                 let monthContainerNode = document.createElement('div');
-                monthContainerNode.className = 'month_container';
+                monthContainerNode.className = 'month-container';
                 monthContainerNode.dataset.number = monthToDisplay;
+                monthContainerNode.dataset.yearNumber = yearToDisplay;
                 monthContainerNode.style.width = 100 / this.amountOfMonthsToDisplay + '%';
-                monthContainerNode.appendChild(monthHeading);
+                monthContainerNode.appendChild(monthHeadingNode);
+                this.appendDaysHeadingsToMonthContainerNode(monthContainerNode);
                 this.monthsContainer.appendChild(monthContainerNode);
-                for (let dayToDisplay = 1; dayToDisplay <= this.getDaysCountOfMonth(yearToDisplay, monthToDisplay); dayToDisplay++) {
+                for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
                     dayNodeCSSMargin = 0;
                     let dayNode = document.createElement('span');
                     dayNode.className = 'day';
                     dayNode.dataset.number = dayToDisplay;
-                    dayNode.innerHTML = dayToDisplay;
+                    dayNode.textContent = dayToDisplay;
+                    monthContainerNode.appendChild(dayNode);
                     isInRange = true;
                     if (this.isLimitPossibleDaysWithRange) {
                         if (!this.isDateInPossibleRange(yearToDisplay, monthToDisplay, dayToDisplay)) {
@@ -184,7 +203,7 @@ var Calendar = function (date_from_input,
                     if (dayNodeCSSMargin) {
                         dayNode.style.marginLeft = dayNodeCSSMargin + '%';
                     }
-                    monthContainerNode.appendChild(dayNode);
+
                     dayNode.style.height = this.dayNodeWidth + '15px';
                 };
             }.bind(this));
@@ -194,36 +213,87 @@ var Calendar = function (date_from_input,
      * Перерисовка календаря на основе новых параметров
      */
     this.redraw = function () {
+        var date = new Date();
         this.calculateDayRangesToDisplayInCalendar();
+        this.yearIndicator.textContent = this.getYearIndicatorBasedOnCalculatedDaysToDisplay();
+        var daysCountOfCurMonth = 0;
+        console.log(this.displayedYearToMonthsArray);
         // Заполняем сам календарь днями
-        this.displayedYearToMonthsArray.forEach(function (months, year) {
-            months.forEach(function (days, month) {
-                // Если текущего месяца еще нет в контейнере месяцев -
-                // создаем его
-                let monthHeading = document.createElement('h4');
-                monthHeading.innerHTML = this.getMonthName(month);
-                let monthContainerNode = document.createElement('div');
-                monthContainerNode.className = 'month_container';
-                monthContainerNode.dataset.number = month;
-                monthContainerNode.style.width = 100 / this.amountOfMonthsToDisplay + '%';
-                monthContainerNode.appendChild(monthHeading);
-                this.monthsContainer.appendChild(monthContainerNode);
-                days.forEach(function (dayInfo) {
-                    if (!dayInfo.isInDOM) {
-                        if (dayInfo.isWeekEnd) {
-                            dayInfo.node.classList.add('weekend');
-                        }
-                        if (!dayInfo.isInRange) {
-                            dayInfo.node.classList.add('unactive');
-                        }
-                        if (dayInfo.margin) {
-                            dayInfo.node.style.marginLeft = dayInfo.margin + '%';
-                        }
-                        monthContainerNode.appendChild(dayInfo.node);
-                        dayInfo.isInDOM = true;
+        var monthIndex = 0;
+        this.displayedYearToMonthsArray.forEach(function (months, yearToDisplay) {
+            date.setFullYear(yearToDisplay);
+            months.forEach(function (val, monthToDisplay) {
+                daysCountOfCurMonth = this.getDaysCountOfMonth(yearToDisplay, monthToDisplay);
+                date.setMonth(monthToDisplay);
+                let curMonthContainer = this.monthsContainer.getElementsByClassName('month-container')[monthIndex];
+                let monthHeadingNode = curMonthContainer.getElementsByClassName('month-heading')[0];
+                monthHeadingNode.textContent = this.getMonthName(monthToDisplay);
+                curMonthContainer.dataset.number = monthToDisplay;
+                curMonthContainer.dataset.yearNumber = yearToDisplay;
+                for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
+                    dayNodeCSSMargin = 0;
+                    let dayNode = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', dayToDisplay);
+                    // Если текущего дня еще нет в DOM календаря данного года и месяца -
+                    // создаем его
+                    if (!dayNode) {
+                        dayNode = document.createElement('span');
+                        dayNode.className = 'day';
+                        dayNode.dataset.number = dayToDisplay;
+                        dayNode.textContent = dayToDisplay;
+                        curMonthContainer.appendChild(dayNode);
                     }
-                    dayInfo.node.style.height = this.dayNodeWidth + 'px';
-                }.bind(this));
+                    isInRange = true;
+                    if (this.isLimitPossibleDaysWithRange) {
+                        if (!this.isDateInPossibleRange(yearToDisplay, monthToDisplay, dayToDisplay)) {
+                            isInRange = false;
+                        }
+                    }
+                    date.setDate(dayToDisplay);
+                    dayOfWeek = date.getDay();
+                    dayOfWeek--;
+                    if (dayOfWeek < 0) {
+                        dayOfWeek = 6;
+                    }
+                    isWeekEnd = dayOfWeek == 5 || dayOfWeek == 6;
+                    if (dayToDisplay == 1) {
+                        dayNodeCSSMargin = (dayOfWeek / 7) * 100;
+                    }
+                    if (isWeekEnd) {
+                        if (!dayNode.classList.contains('weekend')) {
+                            dayNode.classList.add('weekend');
+                        }
+                    } else {
+                        if (dayNode.classList.contains('weekend')) {
+                            dayNode.classList.remove('weekend');
+                        }
+                    }
+                    if (!isInRange) {
+                        if (!dayNode.classList.contains('unactive')) {
+                            dayNode.classList.add('unactive');
+                        }
+                    } else {
+                        if (dayNode.classList.contains('unactive')) {
+                            dayNode.classList.remove('unactive');
+                        }
+                    }
+                    if (dayNodeCSSMargin) {
+                        dayNode.style.marginLeft = dayNodeCSSMargin + '%';
+                    }
+                };
+                // Если в текущем месяце меньше 31 дня, то проверяем, возможно есть
+                // узлы дней из предыдущего календаря (с предыдущими настройками)
+                // со значением больше мксимального номера дня в текущем месяце
+                if (daysCountOfCurMonth < this.MAX_DAYS_AMOUNT_IN_MONTH) {
+                    let dayNodeToRemove = null;
+                    for (let i = daysCountOfCurMonth + 1; i <= this.MAX_DAYS_AMOUNT_IN_MONTH; i++) {
+                        console.log(i);
+                        dayNodeToRemove = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', i);
+                        if (dayNodeToRemove) {
+                            dayNodeToRemove.parentNode.removeChild(dayNodeToRemove);
+                        }
+                    }
+                }
+                monthIndex++;
             }.bind(this));
         }.bind(this));
     };
@@ -248,7 +318,7 @@ var Calendar = function (date_from_input,
             this.dateFromInput.addEventListener(this.event, this.switchCalendar.bind(this));
             // Если передат элемент, хранящий время, то считаем, что пользователь будет еще отдельно вводить время
             if (this.timeFromInput !== null) {
-                this.timeFromInput.className = 'calendar_time_input';
+                this.timeFromInput.className = 'calendar-time-input';
                 this.timeFromInput.readOnly = true;
                 // Добавляем событие, по которому будет отображаться окно выбора времени
                 this.timeFromInput.addEventListener(this.event, this.switchTimeSelector.bind(this));
@@ -258,7 +328,7 @@ var Calendar = function (date_from_input,
                 this.dateToInput.addEventListener(this.event, this.switchCalendar.bind(this));
                 // Если передат элемент, хранящий время, то считаем, что пользователь будет еще отдельно вводить время
                 if (this.timeToInput !== null) {
-                    this.timeToInput.className = 'calendar_time_input';
+                    this.timeToInput.className = 'calendar-time-input';
                     this.timeToInput.readOnly = true;
                     this.timeToInput.addEventListener(this.event, this.switchTimeSelector.bind(this));
                 }
@@ -284,7 +354,7 @@ var Calendar = function (date_from_input,
         if (e.target.classList.contains('day') && this.dayFromSelected !== null && this.dayToSelected === null) {
             let target = e.target;
             // Конечный год диапазона дат, выделенных цветом
-            let newEndYearInRangeByMouseOver = parseInt(target.parentNode.parentNode.dataset.number);
+            let newEndYearInRangeByMouseOver = parseInt(target.parentNode.dataset.yearNumber);
             // Конечный месяц диапазона дат, выделенных цветом
             let newEndMonthInRangeByMouseOver = parseInt(target.parentNode.dataset.number);
             // Конечная дата диапазона дат, выделенных цветом
@@ -302,7 +372,7 @@ var Calendar = function (date_from_input,
         if (e.target.classList.contains('day') && !e.target.classList.contains('unactive')) {
             let target = e.target;
             // Конечный год диапазона дат, выделенных цветом
-            let curYear = parseInt(this.yearIndicator.dataset.number);
+            let curYear = parseInt(target.parentNode.dataset.yearNumber);
             // Конечный месяц диапазона дат, выделенных цветом
             let curMonth = parseInt(target.parentNode.dataset.number);
             // Конечная дата диапазона дат, выделенных цветом
@@ -594,6 +664,7 @@ var Calendar = function (date_from_input,
 
     };
     this.calculateDisplayedYearToMonthsArray = function () {
+        this.displayedYearToMonthsArray = [];
         var curFutureYear = this.curDisplayedYear;
         var curPastYear = this.curDisplayedYear;
         var curFutureMonth = this.curDisplayedMonth;
@@ -685,7 +756,6 @@ var Calendar = function (date_from_input,
         this.curDisplayedYear = this.curYear;
         this.curDisplayedMonth = this.curMonth;
         this.yearIndicator.textContent = this.curDisplayedYear;
-        this.yearIndicator.dataset.number = this.curDisplayedYear;
         // Теперь заполняем возможный для выбор диапазон годов
         for (let yearInPossibleRange = this.curYear - Math.floor(this.YEARS_RANGE / 2); yearInPossibleRange < this.curYear + Math.floor(this.YEARS_RANGE / 2); yearInPossibleRange++) {
             this.possibleYears.push(yearInPossibleRange);
@@ -758,19 +828,30 @@ var Calendar = function (date_from_input,
         this.switchTimeSelector(e);
     }
     /**
-     *  Обработчик события нажатия кнопки перемотки месяцев календаря в будущее
+     * Обработчик события нажатия кнопки перемотки месяцев календаря в будущее
      * @param {*} e 
      */
     this.leafOverFutureClickHandler = function (e) {
-        this.curDisplayedMonth = this.curDisplayedMonth + 1;
-        this.draw();
+        if (this.curDisplayedMonth == this.DECEMBER) {
+            this.curDisplayedMonth = this.JANUARY;
+            this.curDisplayedYear++;
+        } else {
+            this.curDisplayedMonth++;
+        }
+        this.redraw();
     };
     /**
      *  Обработчик события нажатия кнопки перемотки месяцев календаря в будущее
      * @param {*} e 
      */
     this.leafOverPastClickHandler = function (e) {
-
+        if (this.curDisplayedMonth == this.JANUARY) {
+            this.curDisplayedMonth = this.DECEMBER;
+            this.curDisplayedYear--;
+        } else {
+            this.curDisplayedMonth--;
+        }
+        this.redraw();
     };
     /**
      *  Обработчик события нажатий кнопки с изображением отображаемого в календаре года
@@ -790,8 +871,7 @@ var Calendar = function (date_from_input,
     this.yearsContainerClickHandler = function (e) {
         if (e.target.classList.contains('year')) {
             this.curDisplayedYear = e.target.dataset.number;
-            this.yearIndicator.textContent = this.curDisplayedYear;
-            this.draw();
+            this.redraw();
             this.hide(this.yearsContainer);
         }
     }
@@ -821,7 +901,7 @@ var Calendar = function (date_from_input,
      * @returns int
      */
     this.getAmountOfMonthsInDOM = function () {
-        return document.getElementsByClassName('month_container').length;
+        return document.getElementsByClassName('month-container').length;
     };
     /**
      * Рассчет ширины HTML элемента, хранящего дату в календаре
@@ -869,6 +949,83 @@ var Calendar = function (date_from_input,
             this.endPossibleYear = curYear;
             this.endPossibleMonth = curMonth;
         }
+    };
+    /**
+     * Метод формирует заголовко индикатора тгода на основе 
+     * рассчитанного массива годов и месяцев для отображения в календаре
+     * @returns string
+     */
+    this.getYearIndicatorBasedOnCalculatedDaysToDisplay = function () {
+        let curYear = Object.keys(this.displayedYearToMonthsArray)[0];
+        let yearIndicatorValue = curYear;
+        this.displayedYearToMonthsArray.forEach(function (value, index) {
+            if (curYear != index) {
+                curYear = index;
+                yearIndicatorValue = yearIndicatorValue + '/' + curYear;
+            }
+        });
+        return yearIndicatorValue;
+    };
+    /**
+     * Поиск DOM элементов по значению опредленного
+     * атрибута внутри какого-либо другого DOM-элемента
+     * @param {*} parent 
+     * @param {*} attribute 
+     * @param {*} value 
+     * @returns array
+     */
+    this.getDOMNodesByAttributeValue = function (parent, attribute, value) {
+        var foundElements = [];
+        var allParentChilds = parent.getElementsByTagName('*');
+        for (var i = 0; i < allParentChilds.length; i++) {
+            let attributeValue = allParentChilds[i].getAttribute(attribute);
+            if (attributeValue !== null && attributeValue == value) {
+                foundElements.push(allParentChilds[i]);
+            }
+        }
+        return foundElements;
+    };
+    /**
+     * Поиск DOM элемента по значению опредленного
+     * атрибута внутри какого-либо другого DOM-элемента
+     * @param {*} parent 
+     * @param {*} attribute 
+     * @param {*} value 
+     * @returns array
+     */
+    this.getDOMNodeByAttributeValue = function (parent, attribute, value) {
+        var allParentChilds = parent.getElementsByTagName('*');
+        for (var i = 0; i < allParentChilds.length; i++) {
+            let attributeValue = allParentChilds[i].getAttribute(attribute);
+            if (attributeValue !== null && attributeValue == value) {
+                return allParentChilds[i];
+            }
+        }
+        return null;
+    };
+    /**
+     * Метод добавляет в DOM элемент месяца заголовки дней
+     * @param {*} monthContainerNode 
+     */
+    this.appendDaysHeadingsToMonthContainerNode = function (monthContainerNode) {
+        var monthDayHeadingsContainer = document.createElement('div');
+        monthDayHeadingsContainer.className = 'month-day-headings';
+        for (let i = 0; i < this.DAYS_IN_WEEK; i++) {
+            let = monthDayHeading = document.createElement('span');
+            monthDayHeading.className = 'month-day-heading';
+            monthDayHeading.textContent = this.getDayNameByNumber(i);
+            monthDayHeadingsContainer.appendChild(monthDayHeading);
+        }
+        monthContainerNode.appendChild(monthDayHeadingsContainer);
+    }
+    /**
+     * Метод возвращает краткое текстовое 
+     * наименования дня недели по его индексу
+     * @param {*} dayNumber 
+     * @returns 
+     */
+    this.getDayNameByNumber = function (dayNumber) {
+        return this.dayNames[dayNumber];
     }
 }
 /**
