@@ -22,6 +22,9 @@
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     position   : absolute;
     width      : 30%;
+    color      : #eee;
+    padding    : 1em;
+    background : linear-gradient(45deg, #85b4ff, #5191fa);
 }
 
 #time-selector {
@@ -29,7 +32,7 @@
     position        : absolute;
     width           : 20%;
     text-align      : center;
-    background-color: teal;
+    background-color: #5191fa;
     color           : white;
     padding         : 20px;
 }
@@ -44,9 +47,8 @@
 }
 
 #time-selector #apply-time-button {
-    background-color: #668;
+    background-color: #5191fa;
     border          : 1px solid white;
-    color           : white;
     padding         : .5em;
 }
 
@@ -60,81 +62,59 @@
     display: inline-block;
 }
 
-#calendar input[type="text"] {
-    background-color: #333;
-    color           : #eee;
-    border          : 1px solid black;
-    outline         : none;
-    padding         : .25em;
-    display         : block;
-    margin          : 10px auto;
-}
-
 #calendar .year {
-    background: linear-gradient(45deg, #363, #696);
-    color     : white;
-    transition: all .4s;
     padding   : .1em;
     cursor    : pointer;
     display   : inline-block;
     box-sizing: border-box;
+    text-align: center;
 }
 
 #calendar .year:hover {
-    background: linear-gradient(45deg, #696, #7a7);
+    background-color: #85b4ff;
 }
 
 #calendar .month-container {
     float     : left;
-    background: #336;
     padding   : .5em;
     box-sizing: border-box;
 }
 
 #calendar .month-container h4 {
-    text-align  : center;
-    color       : white;
-    font-variant: small-caps;
+    text-align    : center;
+    text-transform: uppercase;
+    margin        : 20px 0;
+    font-size     : 18px;
 }
 
-
-
 #calendar .day {
-    width           : 14.2857%;
-    cursor          : pointer;
-    background-color: #336;
-    color           : white;
-    transition      : background-color .4s;
-    padding         : .1em;
-    display         : inline-block;
-    box-sizing      : border-box;
-    font-size       : 12px;
+    width     : 14.2857%;
+    cursor    : pointer;
+    border    : 1px solid white;
+    float     : left;
+    font-size : 12px;
+    box-sizing: border-box;
 }
 
 #calendar .day.weekend {
-    background: #633;
+    background-color: tomato;
 }
 
 #calendar .day.unactive {
-    background-color: #444;
+    background-color: #BFC7D1;
     cursor          : default;
 }
 
 #calendar .day:hover {
-    background: #669;
+    border: 1px solid #6cc644;
 }
 
 #calendar .day.weekend:hover {
-    background: #966;
-}
-
-#calendar .day.unactive:hover {
-    background-color: #333;
+    background: #e96d55;
 }
 
 #calendar .day.in_selected_period {
-    background: #ddd;
-    color     : #333;
+    background-color: #6cc644
 }
 
 #calendar .calendar-time-input {
@@ -144,50 +124,51 @@
 
 #months {
     position: relative;
+    overflow: hidden;
 }
 
 #year-indicator {
-    font-size       : 26px;
-    color           : white;
-    cursor          : pointer;
-    text-align      : center;
-    padding         : 15px 0;
-    background-color: rgb(118, 35, 156);
-    margin          : 0;
+    font-size : 26px;
+    cursor    : pointer;
+    text-align: center;
+    padding   : 15px 0;
+    margin    : 0;
 }
 
 #leaf-over-future {
-    position     : absolute;
-    top          : 50%;
-    right        : 0;
-    width        : 22px;
-    height       : 22px;
-    padding      : 5px;
-    color        : white;
-    font-size    : 22px;
-    cursor       : pointer;
-    text-align   : center;
-    line-height  : 100%;
-    border       : 1px solid white;
-    border-radius: 100%;
-    margin-top   : 10px;
+    position   : absolute;
+    top        : 0;
+    right      : 0;
+    width      : 22px;
+    height     : 22px;
+    padding    : 5px;
+    font-size  : 22px;
+    cursor     : pointer;
+    text-align : center;
+    line-height: 100%;
+    border     : 1px solid white;
+    margin-top : 20px;
 }
 
 #leaf-over-past {
-    position     : absolute;
-    top          : 50%;
-    left         : 0;
-    width        : 22px;
-    height       : 22px;
-    padding      : 5px;
-    color        : white;
-    font-size    : 22px;
-    cursor       : pointer;
-    text-align   : center;
-    line-height  : 100%;
-    border       : 1px solid white;
-    border-radius: 100%;
-    margin-top   : 10px;
+    position   : absolute;
+    top        : 0;
+    left       : 0;
+    width      : 22px;
+    height     : 22px;
+    padding    : 5px;
+    font-size  : 22px;
+    cursor     : pointer;
+    text-align : center;
+    line-height: 100%;
+    border     : 1px solid white;
+    margin-top : 20px;
+}
+
+#leaf-over-past:hover,
+#leaf-over-future:hover {
+    color           : #5191fa;
+    background-color: white;
 }
 
 .month-day-headings {
@@ -199,14 +180,15 @@
 
 .month-day-heading {
     width     : 14.2857%;
-    display   : inline-block;
+    float     : left;
     font-size : 12px;
     box-sizing: border-box;
     padding   : .1em;
+    text-align: center;
 }
 
 .month-day-heading:nth-child(6),
 .month-day-heading:nth-child(7) {
-    color        : palevioletred;
+    color        : tomato;
     margin-bottom: .5em;
 }
