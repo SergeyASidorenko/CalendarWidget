@@ -24,7 +24,8 @@
     width      : 30%;
     color      : #eee;
     padding    : 1em;
-    background : linear-gradient(45deg, #85b4ff, #5191fa);
+    background : linear-gradient(180deg, #88b5ff,#468dff);
+    z-index    : 0;
 }
 
 #time-selector {
@@ -78,7 +79,9 @@
     float     : left;
     padding   : .5em;
     box-sizing: border-box;
+    background: linear-gradient(180deg, #85b4ff 10%, transparent);
 }
+
 
 #calendar .month-container h4 {
     text-align    : center;
@@ -87,34 +90,35 @@
     font-size     : 18px;
 }
 
-#calendar .day {
-    width     : 14.2857%;
-    cursor    : pointer;
-    border    : 1px solid white;
-    float     : left;
-    font-size : 12px;
-    box-sizing: border-box;
+#calendar .day-container {
+    float   : left;
+    overflow: hidden;
+    width   : 14.2857%;
 }
 
-#calendar .day.weekend {
+#calendar .day {
+    width     : 100%;
+    height    : 100%;
+    position  : relative;
+    cursor    : pointer;
+    font-size : 12px;
+    display   : block;
+    text-align: center;
+    box-sizing: border-box;
+    z-index   : 2;
+}
+
+#calendar .day-container.weekend {
     background-color: tomato;
 }
 
-#calendar .day.unactive {
-    background-color: #BFC7D1;
+#calendar .day-container.unactive {
+    background-color: grey;
     cursor          : default;
 }
 
-#calendar .day:hover {
-    border: 1px solid #6cc644;
-}
-
-#calendar .day.weekend:hover {
-    background: #e96d55;
-}
-
-#calendar .day.in_selected_period {
-    background-color: #6cc644
+#calendar .day-container.in_selected_period {
+    background-color: orange;
 }
 
 #calendar .calendar-time-input {
@@ -125,6 +129,7 @@
 #months {
     position: relative;
     overflow: hidden;
+    display : flex;
 }
 
 #year-indicator {
@@ -138,7 +143,7 @@
 #leaf-over-future {
     position   : absolute;
     top        : 0;
-    right      : 0;
+    right      : .5em;
     width      : 22px;
     height     : 22px;
     padding    : 5px;
@@ -153,7 +158,7 @@
 #leaf-over-past {
     position   : absolute;
     top        : 0;
-    left       : 0;
+    left       : .5em;
     width      : 22px;
     height     : 22px;
     padding    : 5px;
@@ -176,8 +181,6 @@
     margin-bottom: .5em;
 }
 
-
-
 .month-day-heading {
     width     : 14.2857%;
     float     : left;
@@ -189,6 +192,16 @@
 
 .month-day-heading:nth-child(6),
 .month-day-heading:nth-child(7) {
-    color        : tomato;
+    color        : #ff5c3b;
     margin-bottom: .5em;
+}
+
+.day-under-cursor-frame {
+    position  : absolute;
+    left      : 0;
+    top       : 0;
+    display   : none;
+    background: radial-gradient(circle closest-side at 50% 50%, #bbb, transparent);
+    z-index   : 1;
+    transition: .5s all;
 }

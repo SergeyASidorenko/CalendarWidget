@@ -21,12 +21,15 @@ var Calendar = function (date_from_input,
     possibleDaysRange = 100,
     isSelectDaysInRangeAllowed = false,
     isLimitPossibleDaysWithRange = false) {
+    // Некоторые часто встречающиеся константы в коде
     this.JANUARY = 0;
     this.FEBRUARY = 1;
     this.AUGUST = 7;
     this.DECEMBER = 11;
     this.MAX_DAYS_AMOUNT_IN_MONTH = 31;
     this.DAYS_IN_WEEK = 7;
+    this.MONDAY = 0;
+    this.SUNDAY = 6;
     // Возможный диапазон выбора годов
     this.YEARS_RANGE = 48;
     // Флаг указывающий, что нужно создать календарь с возможностью выбора диапазона
@@ -108,6 +111,8 @@ var Calendar = function (date_from_input,
     this.selectTimeEventSource = null;
     this.selectDateEventSource = null;
     this.dayNodeWidth = 0;
+    this.dayNodeHighlightColor = '#bbb';
+    this.dayUnderCursorFrame = null;
     /**
      * Определение количества дней в месяце данного года
      * @param {*} month 
@@ -161,6 +166,8 @@ var Calendar = function (date_from_input,
         var dayNodeCSSMargin = 0;
         var daysCountOfCurMonth = 0;
         var monthIndex = 0;
+        var dayContainerNode = null;
+        var dayNode = null;
         this.displayedYearToMonthsArray.forEach(function (monthsToDisplay, yearToDisplay) {
             date.setFullYear(yearToDisplay);
             monthsToDisplay.forEach(function (days, monthToDisplay) {
@@ -173,11 +180,16 @@ var Calendar = function (date_from_input,
                 monthHeadingNode.textContent = this.getMonthName(monthToDisplay);
                 for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
                     dayNodeCSSMargin = 0;
-                    let dayNode = document.createElement('span');
+                    dayContainerNode = document.createElement('div');
+                    dayContainerNode.className = 'day-container';
+                    dayNode = document.createElement('span');
                     dayNode.className = 'day';
-                    dayNode.dataset.number = dayToDisplay;
+                    dayContainerNode.dataset.number = dayToDisplay;
                     dayNode.textContent = dayToDisplay;
-                    monthContainerNode.appendChild(dayNode);
+                    dayContainerNode.style.height = this.dayNodeWidth + 'px';
+                    dayNode.style.lineHeight = this.dayNodeWidth + 'px';
+                    dayContainerNode.appendChild(dayNode);
+                    monthContainerNode.appendChild(dayContainerNode);
                     isInRange = true;
                     if (this.isLimitPossibleDaysWithRange) {
                         if (!this.isDateInPossibleRange(yearToDisplay, monthToDisplay, dayToDisplay)) {
@@ -190,20 +202,20 @@ var Calendar = function (date_from_input,
                     if (dayOfWeek < 0) {
                         dayOfWeek = 6;
                     }
+                    dayContainerNode.dataset.dayOfWeek = dayOfWeek;
                     isWeekEnd = dayOfWeek == 5 || dayOfWeek == 6;
                     if (dayToDisplay == 1) {
                         dayNodeCSSMargin = (dayOfWeek / 7) * 100;
                     }
                     if (isWeekEnd) {
-                        dayNode.classList.add('weekend');
+                        dayContainerNode.classList.add('weekend');
                     }
                     if (!isInRange) {
-                        dayNode.classList.add('unactive');
+                        dayContainerNode.classList.add('unactive');
                     }
                     if (dayNodeCSSMargin) {
-                        dayNode.style.marginLeft = dayNodeCSSMargin + '%';
+                        dayContainerNode.style.marginLeft = dayNodeCSSMargin + '%';
                     }
-                    dayNode.style.height = this.dayNodeWidth + '15px';
                 };
                 monthIndex++;
             }.bind(this));
@@ -219,6 +231,8 @@ var Calendar = function (date_from_input,
         this.yearIndicator.textContent = this.getYearIndicatorBasedOnCalculatedDaysToDisplay();
         var daysCountOfCurMonth = 0;
         var monthIndex = 0;
+        var dayContainerNode = null;
+        var dayNode = null;
         // На этот раз мы уже не создаем новый элементы дерева DOM
         // а используем уже имеющиеся, просто обновляем их аттрибуты в соответствии 
         // с новыми парметрами календаря
@@ -234,15 +248,22 @@ var Calendar = function (date_from_input,
                 curMonthContainer.dataset.yearNumber = yearToDisplay;
                 for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
                     dayNodeCSSMargin = 0;
-                    let dayNode = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', dayToDisplay);
+                    dayContainerNode = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', dayToDisplay);
                     // Если текущего дня еще нет в DOM календаря данного года и месяца -
                     // создаем его
-                    if (!dayNode) {
+                    if (!dayContainerNode) {
+                        dayContainerNode = document.createElement('div');
+                        dayContainerNode.className = 'day-container';
                         dayNode = document.createElement('span');
                         dayNode.className = 'day';
-                        dayNode.dataset.number = dayToDisplay;
+                        dayContainerNode.dataset.number = dayToDisplay;
                         dayNode.textContent = dayToDisplay;
-                        curMonthContainer.appendChild(dayNode);
+                        dayContainerNode.style.height = this.dayNodeWidth + 'px';
+                        dayNode.style.lineHeight = this.dayNodeWidth + 'px';
+                        dayContainerNode.appendChild(dayNode);
+                        curMonthContainer.appendChild(dayContainerNode);
+                    } else {
+                        dayNode = dayContainerNode.getElementsByClassName('day')[0];
                     }
                     isInRange = true;
                     if (this.isLimitPossibleDaysWithRange) {
@@ -256,41 +277,42 @@ var Calendar = function (date_from_input,
                     if (dayOfWeek < 0) {
                         dayOfWeek = 6;
                     }
+                    dayContainerNode.dataset.dayOfWeek = dayOfWeek;
                     isWeekEnd = dayOfWeek == 5 || dayOfWeek == 6;
                     if (dayToDisplay == 1) {
                         dayNodeCSSMargin = (dayOfWeek / 7) * 100;
                     }
                     if (isWeekEnd) {
-                        if (!dayNode.classList.contains('weekend')) {
-                            dayNode.classList.add('weekend');
+                        if (!dayContainerNode.classList.contains('weekend')) {
+                            dayContainerNode.classList.add('weekend');
                         }
                     } else {
-                        if (dayNode.classList.contains('weekend')) {
-                            dayNode.classList.remove('weekend');
+                        if (dayContainerNode.classList.contains('weekend')) {
+                            dayContainerNode.classList.remove('weekend');
                         }
                     }
                     if (!isInRange) {
-                        if (!dayNode.classList.contains('unactive')) {
-                            dayNode.classList.add('unactive');
+                        if (!dayContainerNode.classList.contains('unactive')) {
+                            dayContainerNode.classList.add('unactive');
                         }
                     } else {
-                        if (dayNode.classList.contains('unactive')) {
-                            dayNode.classList.remove('unactive');
+                        if (dayContainerNode.classList.contains('unactive')) {
+                            dayContainerNode.classList.remove('unactive');
                         }
                     }
                     if (dayNodeCSSMargin) {
-                        dayNode.style.marginLeft = dayNodeCSSMargin + '%';
+                        dayContainerNode.style.marginLeft = dayNodeCSSMargin + '%';
                     }
                 };
                 // Если в текущем месяце меньше 31 дня, то проверяем, возможно есть
                 // узлы дней из предыдущего календаря (с предыдущими настройками)
                 // со значением больше мксимального номера дня в текущем месяце
                 if (daysCountOfCurMonth < this.MAX_DAYS_AMOUNT_IN_MONTH) {
-                    let dayNodeToRemove = null;
+                    let dayContainerNodeToRemove = null;
                     for (let i = daysCountOfCurMonth + 1; i <= this.MAX_DAYS_AMOUNT_IN_MONTH; i++) {
-                        dayNodeToRemove = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', i);
-                        if (dayNodeToRemove) {
-                            dayNodeToRemove.parentNode.removeChild(dayNodeToRemove);
+                        dayContainerNodeToRemove = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', i);
+                        if (dayContainerNodeToRemove) {
+                            dayContainerNodeToRemove.parentNode.removeChild(dayContainerNodeToRemove);
                         }
                     }
                 }
@@ -350,14 +372,17 @@ var Calendar = function (date_from_input,
         // Если доступен выбор диапазона дат, также добавляем обработчик на перемещение мыши - чтобы
         // была подсветка диапазона дат
         if (this.isSelectDaysInRangeAllowed) {
-            this.dateCalendarContainer.addEventListener('mouseover', this.onMouseOver.bind(this));
+            this.dateCalendarContainer.addEventListener('mouseover', this.calendarMouseOverHandlerWhenRangesAllowed.bind(this));
+        } else {
+            this.dateCalendarContainer.addEventListener('mouseover', this.calendarMouseOverHandler.bind(this));
+            this.dateCalendarContainer.addEventListener('mouseout', this.calendarMouseOutHandler.bind(this));
         }
     };
     /**
      * Обработчик движения курсора мыши над календарем
      * @param {*} e 
      */
-    this.onMouseOver = function (e) {
+    this.calendarMouseOverHandlerWhenRangesAllowed = function (e) {
         if (e.target.classList.contains('day') && this.dayFromSelected !== null && this.dayToSelected === null) {
             let target = e.target;
             // Конечный год диапазона дат, выделенных цветом
@@ -375,6 +400,34 @@ var Calendar = function (date_from_input,
             }
         }
     };
+    /**
+     * Обработчик движения курсора мыши над календарем
+     * @param {*} e 
+     */
+    this.calendarMouseOverHandler = function (e) {
+        if (e.target.classList.contains('day')) {
+            let curDayNode = e.target;
+            let monthNode = curDayNode.parentNode;
+            let curDayNodeCoordinates = curDayNode.getBoundingClientRect();
+            let calendarContainerCorrdinates = this.dateCalendarContainer.getBoundingClientRect();
+            this.dayUnderCursorFrame.style.top = (curDayNodeCoordinates.top - calendarContainerCorrdinates.top - this.dayNodeWidth) + 'px';
+            this.dayUnderCursorFrame.style.left = (curDayNodeCoordinates.left - calendarContainerCorrdinates.left - this.dayNodeWidth) + 'px';
+            this.dayUnderCursorFrame.style.display = 'block';
+        }
+    };
+
+    /**
+     * Обработчик выхода курсора мыши с элемента дня календаря
+     * @param {*} e 
+     */
+    this.calendarMouseOutHandler = function (e) {
+        if (e.target.classList.contains('day')) {
+            if (!e.relatedTarget.classList.contains('day')) {
+                this.dayUnderCursorFrame.style.display = 'none';
+            }
+        }
+    };
+
     /**
      * Обработчик нажатия левой кнопки мыши по дню календаря
      * @param {*} e 
@@ -810,6 +863,12 @@ var Calendar = function (date_from_input,
             this.monthsContainer.appendChild(monthContainerNode);
         }
         this.calculateDayNodeWidth();
+        // Создаем рамку вокруг узла в днем
+        this.dayUnderCursorFrame = document.createElement('div');
+        this.dayUnderCursorFrame.className = 'day-under-cursor-frame';
+        this.dayUnderCursorFrame.style.height = 3 * this.dayNodeWidth + 'px';
+        this.dayUnderCursorFrame.style.width = 3 * this.dayNodeWidth + 'px';
+        this.dateCalendarContainer.appendChild(this.dayUnderCursorFrame);
     };
     /**
      * Создание верстки окна выбора времени
@@ -943,11 +1002,11 @@ var Calendar = function (date_from_input,
         let calendarContainerWidth = getInnerNodeWidth(this.dateCalendarContainer, windowWidth);
         let monthsContainerWidth = getInnerNodeWidth(this.monthsContainer, calendarContainerWidth);
         let monthContainerWidth = getInnerNodeWidth(this.monthsContainer.getElementsByClassName('month-container')[0], monthsContainerWidth);
-        let dayNode = document.createElement('span');
-        dayNode.className = 'day';
-        this.dateCalendarContainer.appendChild(dayNode);
-        let dayNodeWidth = parseFloat(window.getComputedStyle(dayNode).width) * monthContainerWidth / 100;
-        this.dateCalendarContainer.removeChild(dayNode);
+        let dayContainerNode = document.createElement('div');
+        dayContainerNode.className = 'day-container';
+        this.dateCalendarContainer.appendChild(dayContainerNode);
+        let dayNodeWidth = parseFloat(window.getComputedStyle(dayContainerNode).width) * monthContainerWidth / 100;
+        this.dateCalendarContainer.removeChild(dayContainerNode);
         this.dayNodeWidth = dayNodeWidth;
     };
 
