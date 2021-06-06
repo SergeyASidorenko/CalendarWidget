@@ -383,16 +383,17 @@ var Calendar = function (date_from_input,
      * @param {*} e 
      */
     this.calendarMouseOverHandlerWhenRangesAllowed = function (e) {
-        if (e.target.classList.contains('day') && this.dayFromSelected !== null && this.dayToSelected === null) {
-            let target = e.target;
+        let target = e.target;
+        let dayContainerNode = target.parentNode;
+        if (target.classList.contains('day') && this.dayFromSelected !== null && this.dayToSelected === null) {
             // Конечный год диапазона дат, выделенных цветом
-            let newEndYearInRangeByMouseOver = parseInt(target.parentNode.dataset.yearNumber);
+            let newEndYearInRangeByMouseOver = parseInt(dayContainerNode.parentNode.dataset.yearNumber);
             // Конечный месяц диапазона дат, выделенных цветом
-            let newEndMonthInRangeByMouseOver = parseInt(target.parentNode.dataset.number);
+            let newEndMonthInRangeByMouseOver = parseInt(dayContainerNode.parentNode.dataset.number);
             // Конечная дата диапазона дат, выделенных цветом
-            let newEndDayInRangeByMouseOver = parseInt(target.dataset.number);
+            let newEndDayInRangeByMouseOver = parseInt(dayContainerNode.dataset.number);
             // Проверяем, не вышли мы при движении мышкой за ращрешенный диапазон выбора дат
-            if (e.target.classList.contains('unactive')) {
+            if (dayContainerNode.classList.contains('unactive')) {
                 this.updateHighLightedDays(newEndYearInRangeByMouseOver, newEndMonthInRangeByMouseOver, newEndDayInRangeByMouseOver);
                 this.endYearInRangeByMouseOver = newEndYearInRangeByMouseOver;
                 this.endMonthInRangeByMouseOver = newEndMonthInRangeByMouseOver;
@@ -407,7 +408,6 @@ var Calendar = function (date_from_input,
     this.calendarMouseOverHandler = function (e) {
         if (e.target.classList.contains('day')) {
             let curDayNode = e.target;
-            let monthNode = curDayNode.parentNode;
             let curDayNodeCoordinates = curDayNode.getBoundingClientRect();
             let calendarContainerCorrdinates = this.dateCalendarContainer.getBoundingClientRect();
             this.dayUnderCursorFrame.style.top = (curDayNodeCoordinates.top - calendarContainerCorrdinates.top - this.dayNodeWidth) + 'px';
@@ -433,14 +433,16 @@ var Calendar = function (date_from_input,
      * @param {*} e 
      */
     this.daysContainerClickListener = function (e) {
-        if (e.target.classList.contains('day') && !e.target.classList.contains('unactive')) {
-            let target = e.target;
+        let target = e.target;
+        let dayContainerNode = target.parentNode;
+        if (target.classList.contains('day') && !dayContainerNode.classList.contains('unactive')) {
+
             // Конечный год диапазона дат, выделенных цветом
-            let curYear = parseInt(target.parentNode.dataset.yearNumber);
+            let curYear = parseInt(dayContainerNode.parentNode.dataset.yearNumber);
             // Конечный месяц диапазона дат, выделенных цветом
-            let curMonth = parseInt(target.parentNode.dataset.number);
+            let curMonth = parseInt(dayContainerNode.parentNode.dataset.number);
             // Конечная дата диапазона дат, выделенных цветом
-            let curDay = parseInt(target.dataset.number);
+            let curDay = parseInt(dayContainerNode.dataset.number);
             if (this.isSelectDaysInRangeAllowed) {
                 if (this.selectedDayFrom !== null && this.dayToSelected !== null) {
                     this.unHighLightDays();

@@ -24,7 +24,7 @@
     width      : 30%;
     color      : #eee;
     padding    : 1em;
-    background : linear-gradient(180deg, #88b5ff,#468dff);
+    background : linear-gradient(180deg, #88b5ff, #468dff);
     z-index    : 0;
 }
 
@@ -201,7 +201,7 @@
     left      : 0;
     top       : 0;
     display   : none;
-    background: radial-gradient(circle closest-side at 50% 50%, #bbb, transparent);
+    background: radial-gradient(circle closest-side at 50% 50%, rgba(255, 255, 255, 0.5), transparent);
     z-index   : 1;
     transition: .5s all;
 }
