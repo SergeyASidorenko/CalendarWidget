@@ -19,6 +19,7 @@ var Calendar = function (date_from_input,
     initiator = null,
     event = 'click',
     possibleDaysRange = 100,
+    isSelectTimeWithDateTogetherAllowed = true,
     isSelectDaysInRangeAllowed = false,
     isLimitPossibleDaysWithRange = false) {
     // Некоторые часто встречающиеся константы в коде
@@ -38,6 +39,7 @@ var Calendar = function (date_from_input,
     this.dateCalendarContainer = null;
     this.yearsContainer = null;
     this.monthsContainer = null;
+    this.applyDateTimeButton = null;
     this.timeSelectorContainer = null;
     this.hoursContainer = null;
     this.minutesContainer = null;
@@ -51,7 +53,7 @@ var Calendar = function (date_from_input,
     // Разрешается ли выбор дат в прошлом
     this.isAllowedDatesInThePast = false;
     // Разрешается ли ввод времени в том же окне, где и выбор даты
-    this.isSelectTimeWithDateTogetherAllowed = false;
+    this.isSelectTimeWithDateTogetherAllowed = isSelectTimeWithDateTogetherAllowed;
     //-------------------------------------------
     this.startPossibleYear = null;
     this.endPossibleYear = null;
@@ -61,15 +63,33 @@ var Calendar = function (date_from_input,
     this.endPossibleDay = null;
     //-------------------------------------------
     this.selectedYearFrom = null;
-    this.yearToSelected = null;
+    this.selectedYearTo = null;
     this.selectedMonthFrom = null;
-    this.monthToSelected = null;
-    this.dayFromSelected = null;
-    this.dayToSelected = null;
-    this.hoursFromSelected = null;
-    this.hoursToSelected = null;
-    this.minutesFromSelected = null;
-    this.minutesToSelected = null;
+    this.selectedMonthTo = null;
+    this.selectedDayFrom = null;
+    this.selectedDayTo = null;
+    this.selectedHoursFrom = null;
+    this.selectedHoursTo = null;
+    this.selectedMinutesFrom = null;
+    this.selectedMinutesTo = null;
+    //-------------------------------------------
+    this.selectedYearFrom = null;
+    this.selectedYearTo = null;
+    this.selectedMonthFrom = null;
+    this.selectedMonthTo = null;
+    this.selectedDayFrom = null;
+    this.selectedDayTo = null;
+    this.selectedHoursFrom = null;
+    this.selectedHoursTo = null;
+    this.selectedMinutesFrom = null;
+    this.selectedMinutesTo = null;
+    //-------------------------------------------
+    this.pickedYearFrom = null;
+    this.pickedYearTo = null;
+    this.pickedMonthFrom = null;
+    this.pickedMonthTo = null;
+    this.pickedDayFrom = null;
+    this.pickedDayTo = null;
     //-------------------------------------------
     this.dateFromInput = date_from_input;
     this.dateToInput = date_to_input;
@@ -113,6 +133,10 @@ var Calendar = function (date_from_input,
     this.dayNodeWidth = 0;
     this.dayNodeHighlightColor = '#bbb';
     this.dayUnderCursorFrame = null;
+    // Кнопка закрытия окна календаря
+    this.closeCalendarContainerButton = null;
+    // Кнопка закрытия окна ввода времени
+    this.closeTimeSelectorContainerButton = null;
     /**
      * Определение количества дней в месяце данного года
      * @param {*} month 
@@ -157,7 +181,9 @@ var Calendar = function (date_from_input,
     this.draw = function () {
         this.calculateDayRangesToDisplayInCalendar();
         this.createDateCalendarContainer();
-        this.createTimeSelectorContainer();
+        if (!this.isSelectTimeWithDateTogetherAllowed) {
+            this.createTimeSelectorContainer();
+        }
         var date = new Date();
         // Заполняем сам календарь днями
         var isInRange = true;
@@ -174,8 +200,8 @@ var Calendar = function (date_from_input,
                 daysCountOfCurMonth = this.getDaysCountOfMonth(yearToDisplay, monthToDisplay);
                 date.setMonth(monthToDisplay);
                 let monthContainerNode = this.monthsContainer.getElementsByClassName('month-container')[monthIndex];
-                monthContainerNode.dataset.number = monthToDisplay;
-                monthContainerNode.dataset.yearNumber = yearToDisplay;
+                monthContainerNode.dataset.month = monthToDisplay;
+                monthContainerNode.dataset.year = yearToDisplay;
                 let monthHeadingNode = monthContainerNode.getElementsByClassName('month-heading')[0];
                 monthHeadingNode.textContent = this.getMonthName(monthToDisplay);
                 for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
@@ -184,7 +210,7 @@ var Calendar = function (date_from_input,
                     dayContainerNode.className = 'day-container';
                     dayNode = document.createElement('span');
                     dayNode.className = 'day';
-                    dayContainerNode.dataset.number = dayToDisplay;
+                    dayContainerNode.dataset.day = dayToDisplay;
                     dayNode.textContent = dayToDisplay;
                     dayContainerNode.style.height = this.dayNodeWidth + 'px';
                     dayNode.style.lineHeight = this.dayNodeWidth + 'px';
@@ -226,6 +252,7 @@ var Calendar = function (date_from_input,
      * Перерисовка календаря на основе новых параметров
      */
     this.redraw = function () {
+        this.unHighLightDays();
         var date = new Date();
         this.calculateDayRangesToDisplayInCalendar();
         this.yearIndicator.textContent = this.getYearIndicatorBasedOnCalculatedDaysToDisplay();
@@ -244,11 +271,11 @@ var Calendar = function (date_from_input,
                 let curMonthContainer = this.monthsContainer.getElementsByClassName('month-container')[monthIndex];
                 let monthHeadingNode = curMonthContainer.getElementsByClassName('month-heading')[0];
                 monthHeadingNode.textContent = this.getMonthName(monthToDisplay);
-                curMonthContainer.dataset.number = monthToDisplay;
-                curMonthContainer.dataset.yearNumber = yearToDisplay;
+                curMonthContainer.dataset.month = monthToDisplay;
+                curMonthContainer.dataset.year = yearToDisplay;
                 for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
                     dayNodeCSSMargin = 0;
-                    dayContainerNode = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', dayToDisplay);
+                    dayContainerNode = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-day', dayToDisplay);
                     // Если текущего дня еще нет в DOM календаря данного года и месяца -
                     // создаем его
                     if (!dayContainerNode) {
@@ -256,7 +283,7 @@ var Calendar = function (date_from_input,
                         dayContainerNode.className = 'day-container';
                         dayNode = document.createElement('span');
                         dayNode.className = 'day';
-                        dayContainerNode.dataset.number = dayToDisplay;
+                        dayContainerNode.dataset.day = dayToDisplay;
                         dayNode.textContent = dayToDisplay;
                         dayContainerNode.style.height = this.dayNodeWidth + 'px';
                         dayNode.style.lineHeight = this.dayNodeWidth + 'px';
@@ -303,6 +330,21 @@ var Calendar = function (date_from_input,
                     if (dayNodeCSSMargin) {
                         dayContainerNode.style.marginLeft = dayNodeCSSMargin + '%';
                     }
+                    if (this.isSelectTimeWithDateTogetherAllowed) {
+                        if (this.pickedYearFrom !== null &&
+                            this.pickedMonthFrom !== null &&
+                            this.pickedDayFrom !== null) {
+                            if (this.pickedYearFrom == yearToDisplay &&
+                                this.pickedMonthFrom == monthToDisplay &&
+                                this.pickedDayFrom == dayToDisplay) {
+                                dayContainerNode.classList.add('selected');
+                            }
+                        } else if (this.selectedYearFrom == yearToDisplay &&
+                            this.selectedMonthFrom == monthToDisplay &&
+                            this.selectedDayFrom == dayToDisplay) {
+                            dayContainerNode.classList.add('selected');
+                        }
+                    }
                 };
                 // Если в текущем месяце меньше 31 дня, то проверяем, возможно есть
                 // узлы дней из предыдущего календаря (с предыдущими настройками)
@@ -310,7 +352,7 @@ var Calendar = function (date_from_input,
                 if (daysCountOfCurMonth < this.MAX_DAYS_AMOUNT_IN_MONTH) {
                     let dayContainerNodeToRemove = null;
                     for (let i = daysCountOfCurMonth + 1; i <= this.MAX_DAYS_AMOUNT_IN_MONTH; i++) {
-                        dayContainerNodeToRemove = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-number', i);
+                        dayContainerNodeToRemove = this.getDOMNodeByAttributeValue(curMonthContainer, 'data-day', i);
                         if (dayContainerNodeToRemove) {
                             dayContainerNodeToRemove.parentNode.removeChild(dayContainerNodeToRemove);
                         }
@@ -341,8 +383,9 @@ var Calendar = function (date_from_input,
             this.initiator.addEventListener(this.event, this.switchCalendarWithTimeSelector.bind(this));
         } else {
             this.dateFromInput.addEventListener(this.event, this.switchCalendar.bind(this));
-            // Если передат элемент, хранящий время, то считаем, что пользователь будет еще отдельно вводить время
-            if (this.timeFromInput !== null) {
+            // Если передат элемент, хранящий время, и не установлена настройка ввода времени в том же окне где и календарь, 
+            // то считаем, что пользователь будет еще отдельно вводить время
+            if (this.timeFromInput !== null && !this.isSelectTimeWithDateTogetherAllowed) {
                 this.timeFromInput.className = 'calendar-time-input';
                 this.timeFromInput.readOnly = true;
                 // Добавляем событие, по которому будет отображаться окно выбора времени
@@ -351,8 +394,9 @@ var Calendar = function (date_from_input,
             if (this.dateToInput !== null) {
                 this.dateToInput.readOnly = true;
                 this.dateToInput.addEventListener(this.event, this.switchCalendar.bind(this));
-                // Если передат элемент, хранящий время, то считаем, что пользователь будет еще отдельно вводить время
-                if (this.timeToInput !== null) {
+                // Если передат элемент, хранящий время, и не установлена настройка ввода времени в том же окне где и календарь,
+                // то считаем, что пользователь будет еще отдельно вводить время
+                if (this.timeToInput !== null && !this.isSelectTimeWithDateTogetherAllowed) {
                     this.timeToInput.className = 'calendar-time-input';
                     this.timeToInput.readOnly = true;
                     this.timeToInput.addEventListener(this.event, this.switchTimeSelector.bind(this));
@@ -377,6 +421,24 @@ var Calendar = function (date_from_input,
             this.dateCalendarContainer.addEventListener('mouseover', this.calendarMouseOverHandler.bind(this));
             this.dateCalendarContainer.addEventListener('mouseout', this.calendarMouseOutHandler.bind(this));
         }
+        this.closeCalendarContainerButton.addEventListener('click', this.closeCalendarContainerButtonClickHandler.bind(this));
+        if (!this.isSelectTimeWithDateTogetherAllowed && this.closeTimeSelectorContainerButton !== null) {
+            this.closeTimeSelectorContainerButton.addEventListener('click', this.closeTimeSelectorContainerButtonClickHandler.bind(this));
+        }
+    };
+    /**
+     * Обработчик нажатия на кнопку закрыть календаря
+     * @param {*} e 
+     */
+    this.closeCalendarContainerButtonClickHandler = function (e) {
+        this.switchCalendar(e);
+    };
+    /**
+     * Обработчик нажатия на кнопку закрыть окна выбора времени
+     * @param {*} e 
+     */
+    this.closeTimeSelectorContainerButtonClickHandler = function (e) {
+        this.switchTimeSelector(e);
     };
     /**
      * Обработчик движения курсора мыши над календарем
@@ -385,16 +447,16 @@ var Calendar = function (date_from_input,
     this.calendarMouseOverHandlerWhenRangesAllowed = function (e) {
         let target = e.target;
         let dayContainerNode = target.parentNode;
-        if (target.classList.contains('day') && this.dayFromSelected !== null && this.dayToSelected === null) {
+        if (target.classList.contains('day') && this.selectedDayFrom !== null && this.selectedDayTo === null) {
             // Конечный год диапазона дат, выделенных цветом
-            let newEndYearInRangeByMouseOver = parseInt(dayContainerNode.parentNode.dataset.yearNumber);
+            let newEndYearInRangeByMouseOver = parseInt(dayContainerNode.parentNode.dataset.year);
             // Конечный месяц диапазона дат, выделенных цветом
-            let newEndMonthInRangeByMouseOver = parseInt(dayContainerNode.parentNode.dataset.number);
+            let newEndMonthInRangeByMouseOver = parseInt(dayContainerNode.parentNode.dataset.month);
             // Конечная дата диапазона дат, выделенных цветом
-            let newEndDayInRangeByMouseOver = parseInt(dayContainerNode.dataset.number);
+            let newEndDayInRangeByMouseOver = parseInt(dayContainerNode.dataset.day);
             // Проверяем, не вышли мы при движении мышкой за ращрешенный диапазон выбора дат
             if (dayContainerNode.classList.contains('unactive')) {
-                this.updateHighLightedDays(newEndYearInRangeByMouseOver, newEndMonthInRangeByMouseOver, newEndDayInRangeByMouseOver);
+                this.updateHighLightedDaysInRange(newEndYearInRangeByMouseOver, newEndMonthInRangeByMouseOver, newEndDayInRangeByMouseOver);
                 this.endYearInRangeByMouseOver = newEndYearInRangeByMouseOver;
                 this.endMonthInRangeByMouseOver = newEndMonthInRangeByMouseOver;
                 this.endDayInRangeByMouseOver = newEndDayInRangeByMouseOver;
@@ -436,43 +498,69 @@ var Calendar = function (date_from_input,
         let target = e.target;
         let dayContainerNode = target.parentNode;
         if (target.classList.contains('day') && !dayContainerNode.classList.contains('unactive')) {
-
+            dayContainerNode.classList.add('selected');
+            // Снимаем подсветку выбранной даты с предыдущего раза,
+            // если установлена опция выбора даты и времени в одном и том же окне
+            this.unHighLightDays();
             // Конечный год диапазона дат, выделенных цветом
-            let curYear = parseInt(dayContainerNode.parentNode.dataset.yearNumber);
+            let curYear = parseInt(dayContainerNode.parentNode.dataset.year);
             // Конечный месяц диапазона дат, выделенных цветом
-            let curMonth = parseInt(dayContainerNode.parentNode.dataset.number);
+            let curMonth = parseInt(dayContainerNode.parentNode.dataset.month);
             // Конечная дата диапазона дат, выделенных цветом
-            let curDay = parseInt(dayContainerNode.dataset.number);
+            let curDay = parseInt(dayContainerNode.dataset.day);
             if (this.isSelectDaysInRangeAllowed) {
-                if (this.selectedDayFrom !== null && this.dayToSelected !== null) {
-                    this.unHighLightDays();
+                if (this.selectedDayFrom !== null && this.selectedDayTo !== null) {
+                    this.unHighLightDaysInRange();
                     this.clearDateFromInput();
                     this.clearDateToInput();
                 }
-                if (this.dayFromSelected !== null && this.dayToSelected === null) {
-                    // Если новый выделенный период находитсчя внутри предыдущего,
+                if (this.selectedDayFrom !== null && this.selectedDayTo === null) {
+                    // Если новый выделенный период находится внутри предыдущего,
                     // то есть нам нужно убрать подсветку с "хвостика" в конце периода дат
                     if ((this.selectedYearFrom <= curYear &&
                         (this.selectedMonthFrom <= curMonth || (this.selectedMonthFrom > curMonth && this.selectedYearFrom < curYear)) &&
-                        (this.dayFromSelected <= curDay || (this.dayFromSelected > curDay && this.selectedMonthFrom < curMonth)))) {
-                        this.updateDateToInput(curYear, curMonth, curDay);
+                        (this.selectedDayFrom <= curDay || (this.selectedDayFrom > curDay && this.selectedMonthFrom < curMonth)))) {
+                        if (this.isSelectTimeWithDateTogetherAllowed) {
+                            this.updatePickedDateTo(curYear, curMonth, curDay);
+                        } else {
+                            this.updateSelectedDateTo(curYear, curMonth, curDay);
+                        }
                     } else {
-                        this.updateDateFromInput(curYear, curMonth, curDay);
+                        if (this.isSelectTimeWithDateTogetherAllowed) {
+                            this.updatePickedDateFrom(curYear, curMonth, curDay);
+                        } else {
+
+                            this.updateSelectedDateFrom(curYear, curMonth, curDay);
+                        }
                         this.clearDateToInput();
                     }
                 }
                 else {
-                    this.updateDateFromInput(curYear, curMonth, curDay);
+                    if (this.isSelectTimeWithDateTogetherAllowed) {
+                        this.updatePickedDateFrom(curYear, curMonth, curDay);
+                    } else {
+                        this.updateSelectedDateFrom(curYear, curMonth, curDay);
+                    }
                 }
             } else {
                 // В зависимости от того, какое поле ввода даты было источников события -
                 // вызываем соответствующий метод
                 if (this.selectDateEventSource.id == 'date_from') {
-                    this.updateDateFromInput(curYear, curMonth, curDay);
+                    if (this.isSelectTimeWithDateTogetherAllowed) {
+                        this.updatePickedDateFrom(curYear, curMonth, curDay);
+                    } else {
+                        this.updateSelectedDateFrom(curYear, curMonth, curDay);
+                    }
                 } else if (this.selectDateEventSource.id == 'date_to') {
-                    this.updateDateToInput(curYear, curMonth, curDay);
+                    if (this.isSelectTimeWithDateTogetherAllowed) {
+                        this.updatePickedDateTo(curYear, curMonth, curDay);
+                    } else {
+                        this.updateSelectedDateTo(curYear, curMonth, curDay);
+                    }
                 }
-                this.switchCalendar(e);
+                if (!this.isSelectTimeWithDateTogetherAllowed) {
+                    this.switchCalendar(e);
+                }
             }
         }
     };
@@ -483,13 +571,13 @@ var Calendar = function (date_from_input,
      * @param {*} newMonth 
      * @param {*} newDay 
      */
-    this.updateHighLightedDays = function (newEnd, newMonth, newDay) {
+    this.updateHighLightedDaysInRange = function (newEnd, newMonth, newDay) {
         if ((this.endYearInRangeByMouseOver === null || this.endMonthInRangeByMouseOver === null || this.endDayInRangeByMouseOver === null) ||
             (this.endYearInRangeByMouseOver <= newEnd &&
                 (this.endMonthInRangeByMouseOver <= newMonth || (this.endMonthInRangeByMouseOver > newMonth && this.endYearInRangeByMouseOver < newEnd)) &&
                 (this.endDayInRangeByMouseOver <= newDay || (this.endDayInRangeByMouseOver > newDay && this.endMonthInRangeByMouseOver < newMonth)))) {
             var startMonthInCurIteration = this.selectedMonthFrom;
-            var startDayInCurIteration = this.dayFromSelected;
+            var startDayInCurIteration = this.selectedDayFrom;
             for (let year = this.selectedYearFrom; year <= newEnd; year++) {
                 var endMonthInCurIteration = null;
                 if (year < newEnd) {
@@ -540,83 +628,181 @@ var Calendar = function (date_from_input,
     /**
      * Удаление подсветки выбранных дат с календаря при установленной настройке выбора диапазона дат
      */
-    this.unHighLightDays = function () {
-        var startMonthInCurIteration = this.selectedMonthFrom;
-        var startDayInCurIteration = this.dayFromSelected;
-        for (let year = this.selectedYearFrom; year <= this.yearToSelected; year++) {
-            var endMonthInCurIteration = null;
-            if (year < this.yearToSelected) {
-                endMonthInCurIteration = this.DECEMBER;
-            } else {
-                endMonthInCurIteration = this.monthToSelected;
-            }
-            for (let month = startMonthInCurIteration; month <= endMonthInCurIteration; month++) {
-                var endDayInCurIteration = 0;
-                if (month < this.monthToSelected) {
-                    endDayInCurIteration = this.getDaysCountOfMonth(year, month);
+    this.unHighLightDaysInRange = function () {
+        if (this.selectedYearFrom !== null && this.selectedMonthFrom !== null && this.selectedDayFrom !== null &&
+            this.selectedYearTo !== null && this.selectedMonthTo !== null && this.selectedDayTo !== null) {
+            var startMonthInCurIteration = this.selectedMonthFrom;
+            var startDayInCurIteration = this.selectedDayFrom;
+            for (let year = this.selectedYearFrom; year <= this.selectedYearTo; year++) {
+                var endMonthInCurIteration = null;
+                if (year < this.selectedYearTo) {
+                    endMonthInCurIteration = this.DECEMBER;
                 } else {
-                    endDayInCurIteration = this.dayToSelected;
+                    endMonthInCurIteration = this.selectedMonthTo;
                 }
-                for (let day = startDayInCurIteration; day <= endDayInCurIteration; day++) {
-                    this.displayedYearToMonthsArray[year][month][day].node.classList.remove('in_selected_period');
+                for (let month = startMonthInCurIteration; month <= endMonthInCurIteration; month++) {
+                    var endDayInCurIteration = 0;
+                    if (month < this.selectedMonthTo) {
+                        endDayInCurIteration = this.getDaysCountOfMonth(year, month);
+                    } else {
+                        endDayInCurIteration = this.selectedDayTo;
+                    }
+                    for (let day = startDayInCurIteration; day <= endDayInCurIteration; day++) {
+                        this.displayedYearToMonthsArray[year][month][day].node.classList.remove('in_selected_period');
+                    }
+                    startDayInCurIteration = 1;
                 }
-                startDayInCurIteration = 1;
+                startMonthInCurIteration = this.JANUARY;
             }
-            startMonthInCurIteration = this.JANUARY;
         }
     };
     /**
-    * Обновление даты начала выбранного периода
-    */
-    this.updateDateTimeFromInputs = function (year, month, day) {
-        this.updateDateFromInput(year, month, day);
-        this.updateTimeFromInput();
+     * Обновление текущей введенной даты начала периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updatePickedDateFrom = function (year, month, day) {
+        this.pickedYearFrom = year;
+        this.pickedMonthFrom = month;
+        this.pickedDayFrom = day;
     };
 
     /**
-    * Обновление даты начала выбранного периода
-    */
-    this.updateDateFromInput = function (year, month, day) {
+     * Обновление текущей введенной даты окончания периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updatePickedDateTo = function (year, month, day) {
+        this.pickedYearTo = year;
+        this.pickedMonthTo = month;
+        this.pickedDayTo = day;
+    };
+
+    /**
+     * Обновление текущей выбранной даты начала периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updateSelectedDateFrom = function (year, month, day) {
         this.selectedYearFrom = year;
         this.selectedMonthFrom = month;
-        this.dayFromSelected = day;
+        this.selectedDayFrom = day;
+        this.updateDateFromInput();
+    };
+
+    /**
+     * Обновление текущей выбранной даты окончания периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updateSelectedDateTo = function (year, month, day) {
+        this.selectedYearTo = year;
+        this.selectedMonthTo = month;
+        this.selectedDayTo = day;
+        this.updateDateToInput();
+    };
+    /**
+     * Обновление текущей выбранной даты начала периода
+     * @param {*} hours 
+     * @param {*} minutes 
+     */
+    this.updateSelectedTimeFrom = function (hours, minutes) {
+        this.selectedHoursFrom = hours;
+        this.selectedMinutesFrom = minutes;
+        if (!this.isSelectTimeWithDateTogetherAllowed) {
+            this.updateTimeFromInput();
+        }
+    };
+
+    /**
+     * Обновление текущей выбранной даты окончания периода
+     * @param {*} hours 
+     * @param {*} minutes 
+     */
+    this.updateSelectedTimeTo = function (hours, minutes) {
+        this.selectedHoursTo = hours;
+        this.selectedMinutesTo = minutes;
+        if (!this.isSelectTimeWithDateTogetherAllowed) {
+            this.updateTimeToInput();
+        }
+    };
+
+    /**
+     * Обновление даты начала выбранного периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updateDateFromInput = function (year = null, month = null, day = null) {
         let date = new Date();
-        date.setFullYear(this.selectedYearFrom);
-        date.setMonth(this.selectedMonthFrom);
-        date.setDate(this.dayFromSelected);
+        if (!year) {
+            year = this.selectedYearFrom;
+        }
+        if (!month) {
+            month = this.selectedMonthFrom;
+        }
+        if (!day) {
+            day = this.selectedDayFrom;
+        }
+        date.setFullYear(year);
+        date.setMonth(month);
+        date.setDate(day);
         this.dateFromInput.value = date.toISOString().slice(0, 10);
     };
     /**
-    * Обновление даты начала выбранного периода
-    */
-    this.updateTimeFromInput = function () {
-        this.timeFromInput.value = this.hoursFromSelected + ':' + this.minutesFromSelected;
+     * Обновление даты начала выбранного периода
+     * @param {*} hours 
+     * @param {*} minutes 
+     */
+    this.updateTimeFromInput = function (hours = null, minutes = null) {
+        if (!hours) {
+            hours = this.selectedHoursFrom;
+        }
+        if (!minutes) {
+            minutes = this.selectedMinutesFrom;
+        }
+        this.timeFromInput.value = hours + ':' + minutes;
     };
+
     /**
-   * Обновление даты и времени конца выбранного периода
-   */
-    this.updateDateTimeToInputs = function (year, month, day) {
-        this.updateDateToInput(year, month, day);
-        this.updateTimeToInput();
-    };
-    /**
-    * Обновление даты начала выбранного периода
-    */
-    this.updateDateToInput = function (year, month, day) {
-        this.yearToSelected = year;
-        this.monthToSelected = month;
-        this.dayToSelected = day;
+     * Обновление даты начала выбранного периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updateDateToInput = function (year = null, month = null, day = null) {
         let date = new Date();
-        date.setFullYear(this.yearToSelected);
-        date.setMonth(this.monthToSelected);
-        date.setDate(this.dayToSelected);
+        if (!year) {
+            year = this.selectedYearTo;
+        }
+        if (!month) {
+            month = this.selectedMonthTo;
+        }
+        if (!day) {
+            day = this.selectedDayTo;
+        }
+        date.setFullYear(year);
+        date.setMonth(month);
+        date.setDate(day);
         this.dateToInput.value = date.toISOString().slice(0, 10);
     };
     /**
-    * Обновление даты начала выбранного периода
-    */
-    this.updateTimeToInput = function () {
-        this.timeToInput.value = this.hoursToSelected + ':' + this.minutesToSelected;
+     * Обновление даты начала выбранного периода
+     * @param {*} hours 
+     * @param {*} minutes 
+     */
+    this.updateTimeToInput = function (hours = null, minutes = null) {
+        if (!hours) {
+            hours = this.selectedHoursTo;
+        }
+        if (!minutes) {
+            minutes = this.selectedMinutesTo;
+        }
+        this.timeToInput.value = hours + ':' + minutes;
     };
     /**
     * Очистка даты и времени начала выбранного периода
@@ -638,7 +824,7 @@ var Calendar = function (date_from_input,
     */
     this.clearDateFromInput = function () {
         this.dateFromInput.value = '';
-        this.dayFromSelected = this.selectedMonthFrom = this.selectedYearFrom = null;
+        this.selectedDayFrom = this.selectedMonthFrom = this.selectedYearFrom = null;
     };
 
     /**
@@ -653,7 +839,7 @@ var Calendar = function (date_from_input,
      */
     this.clearDateToInput = function () {
         this.dateToInput.value = '';
-        this.dayToSelected = this.monthToSelected = this.yearToSelected = null;
+        this.selectedDayTo = this.selectedMonthTo = this.selectedYearTo = null;
     };
 
     /**
@@ -692,13 +878,20 @@ var Calendar = function (date_from_input,
      * Переключение каледаря из видимого состояния в невидимое или наоборот
      */
     this.switchCalendar = function (e) {
-        let eventSource = e.target;
-        this.selectDateEventSource = eventSource;
         if (!this.isDisplayed(this.dateCalendarContainer)) {
+            let eventSource = e.target;
+            this.selectDateEventSource = eventSource;
             this.dateCalendarContainer.style.top = (eventSource.offsetTop + eventSource.offsetHeight) + 'px';
             this.dateCalendarContainer.style.left = eventSource.offsetLeft + 'px';
+            this.highLightDays();
             this.show(this.dateCalendarContainer)
         } else {
+            this.unHighLightDays();
+            if (this.selectDateEventSource.id == 'date_from') {
+                this.pickedDayFrom = this.pickedMonthFrom = this.pickedYearFrom = null;
+            } else if (this.selectDateEventSource.id == 'date_to') {
+                this.pickedDayTo = this.pickedMonthTo = this.pickedYearTo = null;
+            }
             this.hide(this.dateCalendarContainer);
         }
     };
@@ -707,9 +900,9 @@ var Calendar = function (date_from_input,
      * Переключение окна выбора времени из видимого состояния в невидимое или наоборот
      */
     this.switchTimeSelector = function (e) {
-        let eventSource = e.target;
-        this.selectTimeEventSource = eventSource;
         if (!this.isDisplayed(this.timeSelectorContainer)) {
+            let eventSource = e.target;
+            this.selectTimeEventSource = eventSource;
             this.timeSelectorContainer.style.top = (eventSource.offsetTop + eventSource.offsetHeight) + 'px';
             this.timeSelectorContainer.style.left = eventSource.offsetLeft + 'px';
             this.show(this.timeSelectorContainer)
@@ -718,25 +911,6 @@ var Calendar = function (date_from_input,
         }
     };
 
-    /**
-    * Функционал слайдера, в частности для перелистывания месяцев
-    * Перелистывание в прошлое (влево)
-    */
-    this.leafMonthOverInTheFuture = function () {
-        if (this.curDisplayedMonth == this.DECEMBER) {
-            this.curDisplayedMonth = this.JANUARY;
-        } else {
-            this.curDisplayedMonth = this.curDisplayedMonth + 1;
-        }
-        this.draw();
-    };
-
-    /**
-    * Функционал слайдера, в частности для перелистывания месяцев
-    * Перелистывание в будущее (вправо)
-    */
-    this.leafMonthOverInThePast = function (container) {
-    };
     /**
      * Создание вспомогательного массива, содержащего отображаемые года и соответствующие им месяцы
      * для отображения в календаре
@@ -871,6 +1045,19 @@ var Calendar = function (date_from_input,
         this.dayUnderCursorFrame.style.height = 3 * this.dayNodeWidth + 'px';
         this.dayUnderCursorFrame.style.width = 3 * this.dayNodeWidth + 'px';
         this.dateCalendarContainer.appendChild(this.dayUnderCursorFrame);
+        this.closeCalendarContainerButton = document.createElement('span');
+        this.closeCalendarContainerButton.className = 'close-button';
+        this.closeCalendarContainerButton.innerHTML = '&#10006;';
+        this.dateCalendarContainer.appendChild(this.closeCalendarContainerButton);
+        if (this.isSelectTimeWithDateTogetherAllowed) {
+            this.createTimeSelectorContainer();
+            this.dateCalendarContainer.appendChild(this.timeSelectorContainer);
+            this.applyDateTimeButton = document.createElement('button');
+            this.applyDateTimeButton.setAttribute('id', 'apply-date-time-button');
+            this.applyDateTimeButton.textContent = 'Выбрать';
+            this.applyDateTimeButton.addEventListener('click', this.applyDateTimeButtonClickListener.bind(this));
+            this.dateCalendarContainer.appendChild(this.applyDateTimeButton);
+        }
     };
     /**
      * Создание верстки окна выбора времени
@@ -878,53 +1065,99 @@ var Calendar = function (date_from_input,
     this.createTimeSelectorContainer = function () {
         this.timeSelectorContainer = document.createElement('div');
         this.timeSelectorContainer.id = 'time-selector';
-        this.timeSelectorContainer.style.display = 'none';
-        this.timeSelectorContainer.style.top = (this.timeFromInput.offsetTop + this.timeFromInput.offsetHeight) + 'px';
-        this.timeSelectorContainer.style.left = this.timeFromInput.offsetLeft + 'px';
+        if (!this.isSelectTimeWithDateTogetherAllowed) {
+            this.timeSelectorContainer.style.display = 'none';
+            this.timeSelectorContainer.style.top = (this.timeFromInput.offsetTop + this.timeFromInput.offsetHeight) + 'px';
+            this.timeSelectorContainer.style.left = this.timeFromInput.offsetLeft + 'px';
+        } else {
+            this.timeSelectorContainer.style.position = 'static';
+            this.timeSelectorContainer.style.width = '100%';
+        }
         this.hoursContainer = document.createElement('div');
         this.hoursContainer.setAttribute('id', 'hours-container');
         this.timeSelectorContainer.appendChild(this.hoursContainer);
+        var hoursSelectorlabel = document.createElement('label');
+        hoursSelectorlabel.textContent = 'Час:';
+        hoursSelectorlabel.setAttribute('for', 'hours-selector');
         this.hoursSelector = document.createElement('input');
         this.hoursSelector.type = 'number';
         this.hoursSelector.min = 0;
         this.hoursSelector.max = 23;
         this.hoursSelector.setAttribute('id', 'hours-selector');
+        this.hoursContainer.appendChild(hoursSelectorlabel);
         this.hoursContainer.appendChild(this.hoursSelector);
         this.minutesContainer = document.createElement('div');
         this.minutesContainer.setAttribute('id', 'minutes-container');
         this.timeSelectorContainer.appendChild(this.minutesContainer);
+        var minutesSelectorlabel = document.createElement('label');
+        minutesSelectorlabel.textContent = 'Минуты:';
+        minutesSelectorlabel.setAttribute('for', 'minutes-selector');
         this.minutesSelector = document.createElement('input');
         this.minutesSelector.type = 'number';
         this.minutesSelector.min = 0;
         this.minutesSelector.max = 59;
         this.minutesSelector.setAttribute('id', 'minutes-selector');
+        this.minutesContainer.appendChild(minutesSelectorlabel);
         this.minutesContainer.appendChild(this.minutesSelector);
-        this.applyTimeButton = document.createElement('button');
-        this.applyTimeButton.setAttribute('id', 'apply-time-button');
-        this.applyTimeButton.textContent = 'Выбрать';
-        this.timeSelectorContainer.appendChild(this.applyTimeButton);
-        this.applyTimeButton.addEventListener('click', this.applyButtonClickListener.bind(this));
-        document.body.appendChild(this.timeSelectorContainer);
+        if (!this.isSelectTimeWithDateTogetherAllowed) {
+            this.applyTimeButton = document.createElement('button');
+            this.applyTimeButton.setAttribute('id', 'apply-time-button');
+            this.applyTimeButton.textContent = 'Выбрать';
+            this.timeSelectorContainer.appendChild(this.applyTimeButton);
+            this.applyTimeButton.addEventListener('click', this.applyTimeButtonClickListener.bind(this));
+            this.closeTimeSelectorContainerButton = document.createElement('span');
+            this.closeTimeSelectorContainerButton.className = 'close-button';
+            this.closeTimeSelectorContainerButton.innerHTML = '&#10006;';
+            this.dateCalendarContainer.appendChild(this.closeTimeSelectorContainerButton);
+            document.body.appendChild(this.timeSelectorContainer);
+        }
     };
     /**
      * Обработчик нажатия кнопки подтверждения выбора времени в окне выбора времени
      * @param {*} e 
      */
-    this.applyButtonClickListener = function (e) {
+    this.applyTimeButtonClickListener = function (e) {
         if (this.hoursSelector.value.length > 0 && this.minutesSelector.value.length > 0) {
             if (this.selectTimeEventSource.id == 'time_from') {
-                this.hoursFromSelected = this.hoursSelector.value;
-                this.minutesFromSelected = this.minutesSelector.value;
+                this.selectedHoursFrom = this.hoursSelector.value;
+                this.selectedMinutesFrom = this.minutesSelector.value;
                 this.updateTimeFromInput();
             } else if (this.selectTimeEventSource.id == 'time_to') {
-                this.hoursToSelected = this.hoursSelector.value;
-                this.minutesToSelected = this.minutesSelector.value;
+                this.selectedHoursTo = this.hoursSelector.value;
+                this.selectedMinutesTo = this.minutesSelector.value;
                 this.updateTimeToInput();
             }
             this.hoursSelector.value = '';
             this.minutesSelector.value = '';
         }
-        this.switchTimeSelector(e);
+        if (!this.isSelectTimeWithDateTogetherAllowed) {
+            this.switchTimeSelector(e);
+        }
+    }
+    /**
+     * Обработчик нажатия кнопки подтверждения выбора даты и времени в окне выбора времени
+     * @param {*} e 
+     */
+    this.applyDateTimeButtonClickListener = function (e) {
+        if (this.isSelectDaysInRangeAllowed) {
+            this.selectedHoursFrom = this.hoursSelector.value;
+            this.selectedMinutesFrom = this.minutesSelector.value;
+            this.updateSelectedDateFrom(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
+            this.selectedHoursTo = this.hoursSelector.value;
+            this.selectedMinutesTo = this.minutesSelector.value;
+            this.updateSelectedDateTo(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
+        } else {
+            if (this.selectDateEventSource.id == 'date_from') {
+                this.selectedHoursFrom = this.hoursSelector.value;
+                this.selectedMinutesFrom = this.minutesSelector.value;
+                this.updateSelectedDateFrom(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
+            } else if (this.selectDateEventSource.id == 'date_to') {
+                this.selectedHoursTo = this.hoursSelector.value;
+                this.selectedMinutesTo = this.minutesSelector.value;
+                this.updateSelectedDateTo(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
+            }
+        }
+        this.switchCalendar(e);
     }
     /**
      * Обработчик события нажатия кнопки перемотки месяцев календаря в будущее
@@ -969,7 +1202,7 @@ var Calendar = function (date_from_input,
      */
     this.yearsContainerClickHandler = function (e) {
         if (e.target.classList.contains('year')) {
-            this.curDisplayedYear = e.target.dataset.number;
+            this.curDisplayedYear = e.target.dataset.year;
             this.redraw();
             this.hide(this.yearsContainer);
         }
@@ -981,7 +1214,7 @@ var Calendar = function (date_from_input,
     this.isMonthNodeExistsInDom = function (month) {
         let monthNodes = document.getElementsByClassName('month');
         monthNodes.forEach(function (elem, index) {
-            if (elem.dataset.number == month) {
+            if (elem.dataset.month == month) {
                 return true;
             }
         });
@@ -1120,6 +1353,107 @@ var Calendar = function (date_from_input,
     this.getDayNameByNumber = function (dayNumber) {
         return this.dayNames[dayNumber];
     }
+
+    /**
+     * Снимаем подсветку выбранной даты с предыдущего раза,
+     * если установлена опция выбора даты и времени в одном и том же окне
+     */
+    this.unHighLightSelectedDay = function () {
+        if (this.isSelectTimeWithDateTogetherAllowed) {
+            var highLightedMonth = null;
+            var highLightedDay = null;
+            if (this.selectDateEventSource.id == 'date_from') {
+                if (this.pickedMonthFrom !== null) {
+                    console.log(this.pickedMonthFrom);
+                    highLightedMonth = this.pickedMonthFrom;
+                } else if (this.selectedMonthFrom !== null) {
+                    highLightedMonth = this.selectedMonthFrom;
+                }
+                if (this.pickedDayFrom !== null) {
+                    highLightedDay = this.pickedDayFrom;
+                } else if (this.selectedDayFrom !== null) {
+                    highLightedDay = this.selectedDayFrom;
+                }
+                if (highLightedMonth !== null && highLightedDay !== null) {
+                    let previousSelectedMonthContainerNode = this.getDOMNodeByAttributeValue(this.monthsContainer, 'data-month', highLightedMonth);
+                    if (previousSelectedMonthContainerNode) {
+                        let previousSelectedDayContainerNode = this.getDOMNodeByAttributeValue(previousSelectedMonthContainerNode, 'data-day', highLightedDay);
+                        if (previousSelectedDayContainerNode) {
+                            previousSelectedDayContainerNode.classList.remove('selected');
+                        }
+                    }
+                }
+            } else if (this.selectDateEventSource.id == 'date_to') {
+                if (this.pickedMonthTo !== null) {
+                    highLightedMonth = this.pickedMonthTo;
+                } else if (this.selectedMonthTo !== null) {
+                    highLightedMonth = this.selectedMonthTo;
+                }
+                if (this.pickedDayTo !== null) {
+                    highLightedDay = this.pickedDayTo;
+                } else if (this.selectedDayTo !== null) {
+                    highLightedDay = this.selectedDayTo;
+                }
+                if (highLightedMonth !== null && highLightedDay !== null) {
+                    let previousSelectedMonthContainerNode = this.getDOMNodeByAttributeValue(this.monthsContainer, 'data-month', highLightedMonth);
+                    if (previousSelectedMonthContainerNode) {
+                        let previousSelectedDayContainerNode = this.getDOMNodeByAttributeValue(previousSelectedMonthContainerNode, 'data-day', highLightedDay);
+                        if (previousSelectedDayContainerNode) {
+                            previousSelectedDayContainerNode.classList.remove('selected');
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    /**
+     * Подсветка в календаре выбранного дня соответствующего типа
+     */
+    this.highLightDays = function () {
+        if (this.isSelectDaysInRangeAllowed) {
+
+        } else {
+            let monthContainerNodesWithSameYear = null;
+            let dayContainerNode = null;
+            if (this.selectDateEventSource.id == 'date_from') {
+                if (this.selectedYearFrom !== null &&
+                    this.selectedMonthFrom !== null &&
+                    this.selectedDayFrom !== null) {
+                    monthContainerNodesWithSameYear = this.getDOMNodesByAttributeValue(this.monthsContainer, 'data-year', this.selectedYearFrom);
+                    for (let i = 0; i < monthContainerNodesWithSameYear.length; i++) {
+                        if (monthContainerNodesWithSameYear[i].dataset.month == this.selectedMonthFrom) {
+                            dayContainerNode = this.getDOMNodeByAttributeValue(monthContainerNodesWithSameYear[i], 'data-day', this.selectedDayFrom);
+                            if (dayContainerNode) {
+                                dayContainerNode.classList.add('selected');
+                            }
+                        }
+                    }
+                }
+            } else if (this.selectDateEventSource.id == 'date_to') {
+                if (this.selectedYearTo !== null &&
+                    this.selectedMonthTo !== null &&
+                    this.selectedDayTo !== null) {
+                    monthContainerNodesWithSameYear = this.getDOMNodesByAttributeValue(this.monthsContainer, 'data-year', this.selectedYearTo);
+                    for (let i = 0; i < monthContainerNodesWithSameYear.length; i++) {
+                        if (monthContainerNodesWithSameYear[i].dataset.month == this.selectedMonthTo) {
+                            dayContainerNode = this.getDOMNodeByAttributeValue(monthContainerNodesWithSameYear[i], 'data-day', this.selectedDayTo);
+                            if (dayContainerNode) {
+                                dayContainerNode.classList.add('selected');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    this.unHighLightDays = function () {
+        if (this.isSelectDaysInRangeAllowed) {
+            this.unHighLightDaysInRange();
+        } else {
+            this.unHighLightSelectedDay();
+        }
+    };
 }
 /**
  * Вспомогательная функция расчета размера элемента 

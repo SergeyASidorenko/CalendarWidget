@@ -26,41 +26,58 @@
     padding    : 1em;
     background : linear-gradient(180deg, #88b5ff, #468dff);
     z-index    : 0;
+    text-align: center;
 }
 
 #time-selector {
-    font-family     : Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-    position        : absolute;
-    width           : 20%;
-    text-align      : center;
-    background-color: #5191fa;
-    color           : white;
-    padding         : 20px;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    position   : absolute;
+    width      : 20%;
+    text-align : center;
+    background : linear-gradient(180deg, transparent, #6da5ff);
+    color      : white;
+    padding    : 20px;
+    box-sizing : border-box;
 }
 
 #time-selector input {
-    width           : 100%;
+    width           : 25%;
     background-color: transparent;
     border          : 1px solid white;
     padding         : .25em .5em;
     margin          : 10px 0;
     box-sizing      : border-box;
+    outline         : none;
 }
 
-#time-selector #apply-time-button {
+#time-selector label {
+    margin-right: 10px;
+}
+
+#time-selector #apply-time-button,
+#calendar #apply-date-time-button {
     background-color: #5191fa;
     border          : 1px solid white;
     padding         : .5em;
+    color           : white;
+    margin-top      : 15px;
+}
+
+#time-selector #apply-time-button:hover,
+#calendar #apply-date-time-button:hover {
+    background-color: #85b4ff;
 }
 
 #hours-container {
-    width  : 50%;
-    display: inline-block;
+    width     : 50%;
+    display   : inline-block;
+    text-align: center;
 }
 
 #minutes-container {
-    width  : 50%;
-    display: inline-block;
+    width     : 50%;
+    display   : inline-block;
+    text-align: center;
 }
 
 #calendar .year {
@@ -120,7 +137,9 @@
 #calendar .day-container.in_selected_period {
     background-color: orange;
 }
-
+#calendar .day-container.selected {
+    background-color: orange;
+}
 #calendar .calendar-time-input {
     float: left;
     width: 80px;
@@ -204,4 +223,17 @@
     background: radial-gradient(circle closest-side at 50% 50%, rgba(255, 255, 255, 0.5), transparent);
     z-index   : 1;
     transition: .5s all;
+}
+
+.close-button {
+    width      : 24px;
+    height     : 24px;
+    line-height: 24px;
+    text-align : center;
+    border     : 1px solid tomato;
+    position   : absolute;
+    top        : 0;
+    right      : 0;
+    color      : tomato;
+    cursor     : pointer;
 }
