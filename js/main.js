@@ -1,21 +1,21 @@
 /**
-* Класс календаря с возиожностью выбра одной даты, периода, 
+ * Класс календаря с возиожностью выбра одной даты, периода, 
 * а также настройки диапазона дат, из которого эти даты можно выбрать
-* @param {*} date_from_input 
-* @param {*} date_to_input 
-* @param {*} time_start_input 
-* @param {*} time_end_input 
-* @param {*} date_from_input_reference 
-* @param {*} date_to_input_reference 
-* @param  initiator 
-* @param {*} event 
-* @param {*} isSelectDaysInRangeAllowed 
-* @param {*} isLimitPossibleDaysWithRange 
-*/
-var Calendar = function (date_from_input,
-    time_from_input = null,
-    date_to_input = null,
-    time_to_input = null,
+ * @param {*} date_from_input_id 
+ * @param {*} time_from_input_id 
+ * @param {*} date_to_input_id 
+ * @param {*} time_to_input_id 
+ * @param {*} initiator 
+ * @param {*} event 
+ * @param {*} possibleDaysRange 
+ * @param {*} isSelectTimeWithDateTogetherAllowed 
+ * @param {*} isSelectDaysInRangeAllowed 
+ * @param {*} isLimitPossibleDaysWithRange 
+ */
+var Calendar = function (date_from_input_id,
+    time_from_input_id = null,
+    date_to_input_id = null,
+    time_to_input_id = null,
     initiator = null,
     event = 'click',
     possibleDaysRange = 100,
@@ -95,10 +95,10 @@ var Calendar = function (date_from_input,
     this.pickedDayFrom = null;
     this.pickedDayTo = null;
     //-------------------------------------------
-    this.dateFromInput = date_from_input;
-    this.dateToInput = date_to_input;
-    this.timeFromInput = time_from_input;
-    this.timeToInput = time_to_input;
+    this.dateFromInput = document.getElementById(date_from_input_id);
+    this.dateToInput = document.getElementById(date_to_input_id);
+    this.timeFromInput = document.getElementById(time_from_input_id);
+    this.timeToInput = document.getElementById(time_to_input_id);
     //-------------------------------------------
     this.endYearInRangeByMouseOver = null;
     this.endMonthInRangeByMouseOver = null;
@@ -934,8 +934,9 @@ var Calendar = function (date_from_input,
         if (!this.isDisplayed(this.dateCalendarContainer)) {
             let eventSource = e.target;
             this.selectDateEventSource = eventSource;
-            this.dateCalendarContainer.style.top = (eventSource.offsetTop + eventSource.offsetHeight) + 'px';
-            this.dateCalendarContainer.style.left = eventSource.offsetLeft + 'px';
+            let eventSourceCooridinates = eventSource.getBoundingClientRect()
+            this.dateCalendarContainer.style.top = (eventSourceCooridinates.bottom + window.scrollY) + 'px';
+            this.dateCalendarContainer.style.left = (eventSourceCooridinates.left + window.scrollX) + 'px';
             this.highLightDays();
             this.show(this.dateCalendarContainer)
         } else {
@@ -956,14 +957,14 @@ var Calendar = function (date_from_input,
         if (!this.isDisplayed(this.timeSelectorContainer)) {
             let eventSource = e.target;
             this.selectTimeEventSource = eventSource;
-            this.timeSelectorContainer.style.top = (eventSource.offsetTop + eventSource.offsetHeight) + 'px';
-            this.timeSelectorContainer.style.left = eventSource.offsetLeft + 'px';
+            let eventSourceCooridinates = eventSource.getBoundingClientRect()
+            this.timeSelectorContainer.style.top = (eventSourceCooridinates.bottom + window.scrollY) + 'px';
+            this.timeSelectorContainer.style.left = (eventSourceCooridinates.left + window.scrollX) + 'px';
             this.show(this.timeSelectorContainer)
         } else {
             this.hide(this.timeSelectorContainer);
         }
     };
-
     /**
      * Создание вспомогательного массива, содержащего отображаемые года и соответствующие им месяцы
      * для отображения в календаре
@@ -1120,8 +1121,6 @@ var Calendar = function (date_from_input,
         this.timeSelectorContainer.id = 'time-selector';
         if (!this.isSelectTimeWithDateTogetherAllowed) {
             this.timeSelectorContainer.style.display = 'none';
-            this.timeSelectorContainer.style.top = (this.timeFromInput.offsetTop + this.timeFromInput.offsetHeight) + 'px';
-            this.timeSelectorContainer.style.left = this.timeFromInput.offsetLeft + 'px';
         } else {
             this.timeSelectorContainer.style.position = 'static';
             this.timeSelectorContainer.style.width = '100%';
@@ -1652,11 +1651,5 @@ function getInnerNodeWidth(node, parentWidth) {
     }
     return nodeWidth;
 }
-let dateFromCalendarInitiator = document.getElementById('date_from');
-let timeFromInput = document.getElementById('time_from');
-let dateFromInput = dateFromCalendarInitiator;
-let dateToCalendarInitiator = document.getElementById('date_to');
-let dateToInput = dateToCalendarInitiator;
-let timeToInput = document.getElementById('time_to');
-let calendar = new Calendar(dateFromInput, timeFromInput, dateToInput, timeToInput);
+let calendar = new Calendar('date_from', 'time_from', 'date_to', 'time_to');
 calendar.init();

@@ -234,16 +234,22 @@
 }
 
 .close-button {
-    width      : 24px;
-    height     : 24px;
-    line-height: 24px;
-    text-align : center;
-    border     : 1px solid tomato;
-    position   : absolute;
-    top        : 0;
-    right      : 0;
-    color      : tomato;
-    cursor     : pointer;
+    width           : 24px;
+    height          : 24px;
+    line-height     : 24px;
+    text-align      : center;
+    border          : 1px solid tomato;
+    position        : absolute;
+    top             : 0;
+    right           : 0;
+    background-color: tomato;
+    color           : white;
+    cursor          : pointer;
+}
+
+.close-button:hover {
+    background-color: white;
+    color           : tomato;
 }
 
 .up-button,
