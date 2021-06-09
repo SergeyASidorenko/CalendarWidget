@@ -45,6 +45,10 @@ var Calendar = function (date_from_input,
     this.minutesContainer = null;
     this.hoursSelector = null;
     this.minutesSelector = null;
+    this.upHoursButton = null;
+    this.downHoursButton = null;
+    this.upMinutesButton = null;
+    this.downMinutesButton = null;
     this.applyTimeButton = null;
     this.yearIndicator = null;
     this.leafOverFuture = null;
@@ -523,14 +527,14 @@ var Calendar = function (date_from_input,
                         if (this.isSelectTimeWithDateTogetherAllowed) {
                             this.updatePickedDateTo(curYear, curMonth, curDay);
                         } else {
-                            this.updateSelectedDateTo(curYear, curMonth, curDay);
+                            this.updateSelectedDateToWithInputs(curYear, curMonth, curDay);
                         }
                     } else {
                         if (this.isSelectTimeWithDateTogetherAllowed) {
                             this.updatePickedDateFrom(curYear, curMonth, curDay);
                         } else {
 
-                            this.updateSelectedDateFrom(curYear, curMonth, curDay);
+                            this.updateSelectedDateFromWithInputs(curYear, curMonth, curDay);
                         }
                         this.clearDateToInput();
                     }
@@ -539,7 +543,7 @@ var Calendar = function (date_from_input,
                     if (this.isSelectTimeWithDateTogetherAllowed) {
                         this.updatePickedDateFrom(curYear, curMonth, curDay);
                     } else {
-                        this.updateSelectedDateFrom(curYear, curMonth, curDay);
+                        this.updateSelectedDateFromWithInputs(curYear, curMonth, curDay);
                     }
                 }
             } else {
@@ -549,13 +553,13 @@ var Calendar = function (date_from_input,
                     if (this.isSelectTimeWithDateTogetherAllowed) {
                         this.updatePickedDateFrom(curYear, curMonth, curDay);
                     } else {
-                        this.updateSelectedDateFrom(curYear, curMonth, curDay);
+                        this.updateSelectedDateFromWithInputs(curYear, curMonth, curDay);
                     }
                 } else if (this.selectDateEventSource.id == 'date_to') {
                     if (this.isSelectTimeWithDateTogetherAllowed) {
                         this.updatePickedDateTo(curYear, curMonth, curDay);
                     } else {
-                        this.updateSelectedDateTo(curYear, curMonth, curDay);
+                        this.updateSelectedDateToWithInputs(curYear, curMonth, curDay);
                     }
                 }
                 if (!this.isSelectTimeWithDateTogetherAllowed) {
@@ -680,13 +684,62 @@ var Calendar = function (date_from_input,
         this.pickedDayTo = day;
     };
 
+
     /**
      * Обновление текущей выбранной даты начала периода
      * @param {*} year 
      * @param {*} month 
      * @param {*} day 
      */
-    this.updateSelectedDateFrom = function (year, month, day) {
+    this.updateSelectedDateTimeFromWithInputs = function (year, month, day) {
+        this.selectedYearFrom = year;
+        this.selectedMonthFrom = month;
+        this.selectedDayFrom = day;
+        if (this.timeFromInput !== null) {
+            this.updateDateFromInput();
+            this.updateTimeFromInput();
+        } else {
+            this.updateDateTimeFromInput();
+        }
+    };
+    /**
+    * Обновление текущей выбранной даты начала периода
+    * @param {*} year 
+    * @param {*} month 
+    * @param {*} day 
+    */
+    this.updateSelectedDateTimeToWithInputs = function (year, month, day) {
+        this.selectedYearTo = year;
+        this.selectedMonthTo = month;
+        this.selectedDayTo = day;
+        if (this.timeToInput !== null) {
+            this.updateDateToInput();
+            this.updateTimeToInput();
+        } else {
+            this.updateDateTimeToInput();
+        }
+    };
+    /**
+     * Обновление поля, содержащего и дату и время начала периода
+     */
+    this.updateDateTimeFromInput = function () {
+        this.updateDateFromInput();
+        this.dateFromInput.value = this.dateFromInput.value + ' ' + this.updateTimeFromInput();
+    };
+    /**
+    * Обновление текущей выбранной даты окончания периода
+    */
+    this.updateDateTimeToInput = function () {
+        this.updateDateToInput();
+        this.dateToInput.value = this.dateToInput.value + ' ' + this.updateTimeToInput();
+    };
+    /**
+     * Обновление текущей выбранной даты начала периода
+     * @param {*} year 
+     * @param {*} month 
+     * @param {*} day 
+     */
+    this.updateSelectedDateFromWithInputs = function (year, month, day) {
         this.selectedYearFrom = year;
         this.selectedMonthFrom = month;
         this.selectedDayFrom = day;
@@ -699,7 +752,7 @@ var Calendar = function (date_from_input,
      * @param {*} month 
      * @param {*} day 
      */
-    this.updateSelectedDateTo = function (year, month, day) {
+    this.updateSelectedDateToWithInputs = function (year, month, day) {
         this.selectedYearTo = year;
         this.selectedMonthTo = month;
         this.selectedDayTo = day;
@@ -751,7 +804,7 @@ var Calendar = function (date_from_input,
         date.setFullYear(year);
         date.setMonth(month);
         date.setDate(day);
-        this.dateFromInput.value = date.toISOString().slice(0, 10);
+        this.dateFromInput.value = date.toLocaleDateString().slice(0, 10);
     };
     /**
      * Обновление даты начала выбранного периода
@@ -788,7 +841,7 @@ var Calendar = function (date_from_input,
         date.setFullYear(year);
         date.setMonth(month);
         date.setDate(day);
-        this.dateToInput.value = date.toISOString().slice(0, 10);
+        this.dateToInput.value = date.toLocaleDateString().slice(0, 10);
     };
     /**
      * Обновление даты начала выбранного периода
@@ -1073,32 +1126,52 @@ var Calendar = function (date_from_input,
             this.timeSelectorContainer.style.position = 'static';
             this.timeSelectorContainer.style.width = '100%';
         }
+        //-------------------------------------------------------------
+        this.upHoursButton = document.createElement('span');
+        this.downHoursButton = document.createElement('span');
+        this.upMinutesButton = document.createElement('span');
+        this.downMinutesButton = document.createElement('span');
+        this.upHoursButton.className = 'up-button';
+        this.downHoursButton.className = 'down-button';
+        this.upMinutesButton.className = 'up-button';
+        this.downMinutesButton.className = 'down-button';
+        this.upHoursButton.textContent = '+';
+        this.downHoursButton.textContent = '-';
+        this.upMinutesButton.textContent = '+';
+        this.downMinutesButton.textContent = '-';
+        this.upHoursButton.addEventListener('click', this.upHoursButtonClickHandler.bind(this));
+        this.downHoursButton.addEventListener('click', this.downHoursButtonClickHandler.bind(this));
+        this.upMinutesButton.addEventListener('click', this.upMinutesButtonClickHandler.bind(this));
+        this.downMinutesButton.addEventListener('click', this.downMinutesButtonClickHandler.bind(this));
+        //-------------------------------------------------------------
         this.hoursContainer = document.createElement('div');
         this.hoursContainer.setAttribute('id', 'hours-container');
         this.timeSelectorContainer.appendChild(this.hoursContainer);
         var hoursSelectorlabel = document.createElement('label');
         hoursSelectorlabel.textContent = 'Час:';
         hoursSelectorlabel.setAttribute('for', 'hours-selector');
-        this.hoursSelector = document.createElement('input');
-        this.hoursSelector.type = 'number';
-        this.hoursSelector.min = 0;
-        this.hoursSelector.max = 23;
-        this.hoursSelector.setAttribute('id', 'hours-selector');
         this.hoursContainer.appendChild(hoursSelectorlabel);
+        this.hoursContainer.appendChild(this.upHoursButton);
+        this.hoursSelector = document.createElement('input');
+        this.hoursSelector.type = 'text';
+        this.hoursSelector.setAttribute('id', 'hours-selector');
+        this.hoursSelector.addEventListener('keydown', this.keyDownHoursSelectorHandler.bind(this));
         this.hoursContainer.appendChild(this.hoursSelector);
+        this.hoursContainer.appendChild(this.downHoursButton);
         this.minutesContainer = document.createElement('div');
         this.minutesContainer.setAttribute('id', 'minutes-container');
         this.timeSelectorContainer.appendChild(this.minutesContainer);
         var minutesSelectorlabel = document.createElement('label');
         minutesSelectorlabel.textContent = 'Минуты:';
         minutesSelectorlabel.setAttribute('for', 'minutes-selector');
-        this.minutesSelector = document.createElement('input');
-        this.minutesSelector.type = 'number';
-        this.minutesSelector.min = 0;
-        this.minutesSelector.max = 59;
-        this.minutesSelector.setAttribute('id', 'minutes-selector');
         this.minutesContainer.appendChild(minutesSelectorlabel);
+        this.minutesContainer.appendChild(this.upMinutesButton);
+        this.minutesSelector = document.createElement('input');
+        this.minutesSelector.type = 'text';
+        this.minutesSelector.setAttribute('id', 'minutes-selector');
+        this.minutesSelector.addEventListener('keydown', this.keyDownMinutesSelectorHandler.bind(this));
         this.minutesContainer.appendChild(this.minutesSelector);
+        this.minutesContainer.appendChild(this.downMinutesButton);
         if (!this.isSelectTimeWithDateTogetherAllowed) {
             this.applyTimeButton = document.createElement('button');
             this.applyTimeButton.setAttribute('id', 'apply-time-button');
@@ -1142,19 +1215,19 @@ var Calendar = function (date_from_input,
         if (this.isSelectDaysInRangeAllowed) {
             this.selectedHoursFrom = this.hoursSelector.value;
             this.selectedMinutesFrom = this.minutesSelector.value;
-            this.updateSelectedDateFrom(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
+            this.updateSelectedDateTimeFromWithInputs(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
             this.selectedHoursTo = this.hoursSelector.value;
             this.selectedMinutesTo = this.minutesSelector.value;
-            this.updateSelectedDateTo(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
+            this.updateSelectedDateTimeToWithInputs(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
         } else {
             if (this.selectDateEventSource.id == 'date_from') {
                 this.selectedHoursFrom = this.hoursSelector.value;
                 this.selectedMinutesFrom = this.minutesSelector.value;
-                this.updateSelectedDateFrom(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
+                this.updateSelectedDateTimeFromWithInputs(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
             } else if (this.selectDateEventSource.id == 'date_to') {
                 this.selectedHoursTo = this.hoursSelector.value;
                 this.selectedMinutesTo = this.minutesSelector.value;
-                this.updateSelectedDateTo(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
+                this.updateSelectedDateTimeToWithInputs(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
             }
         }
         this.switchCalendar(e);
@@ -1364,7 +1437,6 @@ var Calendar = function (date_from_input,
             var highLightedDay = null;
             if (this.selectDateEventSource.id == 'date_from') {
                 if (this.pickedMonthFrom !== null) {
-                    console.log(this.pickedMonthFrom);
                     highLightedMonth = this.pickedMonthFrom;
                 } else if (this.selectedMonthFrom !== null) {
                     highLightedMonth = this.selectedMonthFrom;
@@ -1447,11 +1519,113 @@ var Calendar = function (date_from_input,
             }
         }
     };
-    this.unHighLightDays = function () {
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.unHighLightDays = function (e) {
         if (this.isSelectDaysInRangeAllowed) {
             this.unHighLightDaysInRange();
         } else {
             this.unHighLightSelectedDay();
+        }
+    };
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.upHoursButtonClickHandler = function (e) {
+        if (this.hoursSelector.value < 23) {
+            if (this.hoursSelector.value.length === 0) {
+                this.hoursSelector.value = 1;
+            } else {
+                this.hoursSelector.value = parseInt(this.hoursSelector.value) + 1;
+            }
+            if (this.hoursSelector.value.length == 1) {
+                this.hoursSelector.value = '0' + this.hoursSelector.value;
+            }
+        }
+    };
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.downHoursButtonClickHandler = function (e) {
+        if (this.hoursSelector.value > 0) {
+            this.hoursSelector.value = parseInt(this.hoursSelector.value) - 1;
+        }
+        if (this.hoursSelector.value.length == 1) {
+            this.hoursSelector.value = '0' + this.hoursSelector.value;
+        }
+    };
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.upMinutesButtonClickHandler = function (e) {
+        if (this.minutesSelector.value < 59) {
+            if (this.minutesSelector.value.length === 0) {
+                this.minutesSelector.value = 1;
+            } else {
+                this.minutesSelector.value = parseInt(this.minutesSelector.value) + 1;
+            }
+            if (this.minutesSelector.value.length == 1) {
+                this.minutesSelector.value = '0' + this.minutesSelector.value;
+            }
+        }
+    };
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.downMinutesButtonClickHandler = function (e) {
+        if (this.minutesSelector.value > 0) {
+            this.minutesSelector.value = parseInt(this.minutesSelector.value) - 1;
+        }
+        if (this.minutesSelector.value.length == 1) {
+            this.minutesSelector.value = '0' + this.minutesSelector.value;
+        }
+    };
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.keyDownHoursSelectorHandler = function (e) {
+        if (((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105)) || e.keyCode == 8 || e.keyCode == 46 || e.keyCode == 37 || e.keyCode == 39) {
+            if (e.target.value == '' && ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105))) {
+                e.target.value = 0;
+            } else if (e.target.value.length == 1 && parseInt(e.target.value + e.key) > 23) {
+                e.target.value = 23;
+                e.preventDefault();
+            } else if (e.target.value.length == 2 && ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105))) {
+                if (e.target.value.charAt(0) == '0' && parseInt(e.target.value + e.key) <= 23) {
+                    e.target.value = e.target.value.charAt(1) + e.key;
+                }
+                e.preventDefault();
+            }
+        } else {
+            e.preventDefault();
+        }
+    };
+    /**
+     * 
+     * @param {*} e 
+     */
+    this.keyDownMinutesSelectorHandler = function (e) {
+        if (((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105)) || e.keyCode == 8 || e.keyCode == 46 || e.keyCode == 37 || e.keyCode == 39) {
+            if (e.target.value == '' && ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105))) {
+                e.target.value = 0;
+            } else if (e.target.value.length == 1 && parseInt(e.target.value + e.key) > 59) {
+                e.target.value = 59;
+                e.preventDefault();
+            } else if (e.target.value.length == 2 && ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105))) {
+                if (e.target.value.charAt(0) == '0' && parseInt(e.target.value + e.key) <= 59) {
+                    e.target.value = e.target.value.charAt(1) + e.key;
+                }
+                e.preventDefault();
+            }
+        } else {
+            e.preventDefault();
         }
     };
 }
@@ -1479,10 +1653,10 @@ function getInnerNodeWidth(node, parentWidth) {
     return nodeWidth;
 }
 let dateFromCalendarInitiator = document.getElementById('date_from');
-let timeFrom = document.getElementById('time_from');
-let dateFrom = dateFromCalendarInitiator;
+let timeFromInput = document.getElementById('time_from');
+let dateFromInput = dateFromCalendarInitiator;
 let dateToCalendarInitiator = document.getElementById('date_to');
-let timeTo = document.getElementById('time_to');
-let dateTo = dateToCalendarInitiator;
-let calendar = new Calendar(dateFrom, timeFrom, dateTo, timeTo);
+let dateToInput = dateToCalendarInitiator;
+let timeToInput = document.getElementById('time_to');
+let calendar = new Calendar(dateFromInput, timeFromInput, dateToInput, timeToInput);
 calendar.init();

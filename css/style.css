@@ -26,7 +26,7 @@
     padding    : 1em;
     background : linear-gradient(180deg, #88b5ff, #468dff);
     z-index    : 0;
-    text-align: center;
+    text-align : center;
 }
 
 #time-selector {
@@ -43,11 +43,17 @@
 #time-selector input {
     width           : 25%;
     background-color: transparent;
-    border          : 1px solid white;
+    border-top      : 1px solid white;
+    border-bottom   : 1px solid white;
+    border-left     : none;
+    border-right    : none;
     padding         : .25em .5em;
     margin          : 10px 0;
     box-sizing      : border-box;
     outline         : none;
+    color           : white;
+    height          : 32px;
+    vertical-align  : middle;
 }
 
 #time-selector label {
@@ -137,9 +143,11 @@
 #calendar .day-container.in_selected_period {
     background-color: orange;
 }
+
 #calendar .day-container.selected {
     background-color: orange;
 }
+
 #calendar .calendar-time-input {
     float: left;
     width: 80px;
@@ -236,4 +244,25 @@
     right      : 0;
     color      : tomato;
     cursor     : pointer;
+}
+
+.up-button,
+.down-button {
+    display         : inline-block;
+    width           : 32px;
+    height          : 32px;
+    font-size       : 24px;
+    color           : white;
+    border          : 1px solid white;
+    vertical-align  : middle;
+    text-align      : center;
+    background-color: transparent;
+    box-sizing      : border-box;
+    cursor          : pointer;
+}
+
+.up-button:hover,
+.down-button:hover {
+    color           : #5191fa;
+    background-color: white;
 }
