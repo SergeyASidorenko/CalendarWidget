@@ -429,6 +429,42 @@ var Calendar = function (date_from_input_id,
         if (!this.isSelectTimeWithDateTogetherAllowed && this.closeTimeSelectorContainerButton !== null) {
             this.closeTimeSelectorContainerButton.addEventListener('click', this.closeTimeSelectorContainerButtonClickHandler.bind(this));
         }
+        // Если в полях ввода есть какие-то данные, инициализируем соответствующие свойства класса
+        if (this.isSelectTimeWithDateTogetherAllowed) {
+            if (this.dateFromInput !== null && this.dateFromInput.value.length > 0) {
+                this.selectedYearFrom = parseInt(this.dateFromInput.value.substring(6, 10));
+                this.selectedMonthFrom = parseInt(this.dateFromInput.value.substring(3, 5)) - 1;
+                this.selectedDayFrom = parseInt(this.dateFromInput.value.substring(0, 2));
+                this.selectedHoursFrom = parseInt(this.dateFromInput.value.substring(11, 13));
+                this.selectedMinutesFrom = parseInt(this.dateFromInput.value.substring(14));
+            }
+            if (this.dateToInput !== null && this.dateToInput.value.length > 0) {
+                this.selectedYearTo = parseInt(this.dateToInput.value.substring(6, 10));
+                this.selectedMonthTo = parseInt(this.dateToInput.value.substring(3, 5)) - 1;
+                this.selectedDayTo = parseInt(this.dateToInput.value.substring(0, 2));
+                this.selectedHoursTo = parseInt(this.dateToInput.value.substring(11, 13));
+                this.selectedMinutesTo = parseInt(this.dateToInput.value.substring(14));
+            }
+        } else {
+            if (this.dateFromInput !== null) {
+                this.selectedYearFrom = parseInt(this.dateFromInput.value.substring(6, 10));
+                this.selectedMonthFrom = parseInt(this.dateFromInput.value.substring(3, 5)) - 1;
+                this.selectedDayFrom = parseInt(this.dateFromInput.value.substring(0, 2));
+            }
+            if (this.dateToInput !== null) {
+                this.selectedYearTo = parseInt(this.dateToInput.value.substring(6, 10));
+                this.selectedMonthTo = parseInt(this.dateToInput.value.substring(3, 5)) - 1;
+                this.selectedDayTo = parseInt(this.dateToInput.value.substring(0, 2));
+            }
+            if (this.timeFromInput !== null) {
+                this.selectedHoursFrom = parseInt(this.dateFromInput.value.substring(11, 13));
+                this.selectedMinutesFrom = parseInt(this.dateFromInput.value.substring(14));
+            }
+            if (this.timeToInput !== null) {
+                this.selectedHoursTo = parseInt(this.dateToInput.value.substring(11, 13));
+                this.selectedMinutesTo = parseInt(this.dateToInput.value.substring(14));
+            }
+        }
     };
     /**
      * Обработчик нажатия на кнопку закрыть календаря
@@ -549,13 +585,13 @@ var Calendar = function (date_from_input_id,
             } else {
                 // В зависимости от того, какое поле ввода даты было источников события -
                 // вызываем соответствующий метод
-                if (this.selectDateEventSource.id == 'date_from') {
+                if (this.selectDateEventSource == this.dateFromInput) {
                     if (this.isSelectTimeWithDateTogetherAllowed) {
                         this.updatePickedDateFrom(curYear, curMonth, curDay);
                     } else {
                         this.updateSelectedDateFromWithInputs(curYear, curMonth, curDay);
                     }
-                } else if (this.selectDateEventSource.id == 'date_to') {
+                } else if (this.selectDateEventSource == this.dateToInput) {
                     if (this.isSelectTimeWithDateTogetherAllowed) {
                         this.updatePickedDateTo(curYear, curMonth, curDay);
                     } else {
@@ -692,9 +728,15 @@ var Calendar = function (date_from_input_id,
      * @param {*} day 
      */
     this.updateSelectedDateTimeFromWithInputs = function (year, month, day) {
-        this.selectedYearFrom = year;
-        this.selectedMonthFrom = month;
-        this.selectedDayFrom = day;
+        if (year !== null) {
+            this.selectedYearFrom = year;
+        }
+        if (month !== null) {
+            this.selectedMonthFrom = month;
+        }
+        if (day !== null) {
+            this.selectedDayFrom = day;
+        }
         if (this.timeFromInput !== null) {
             this.updateDateFromInput();
             this.updateTimeFromInput();
@@ -709,9 +751,15 @@ var Calendar = function (date_from_input_id,
     * @param {*} day 
     */
     this.updateSelectedDateTimeToWithInputs = function (year, month, day) {
-        this.selectedYearTo = year;
-        this.selectedMonthTo = month;
-        this.selectedDayTo = day;
+        if (year !== null) {
+            this.selectedYearTo = year;
+        }
+        if (month !== null) {
+            this.selectedMonthTo = month;
+        }
+        if (day !== null) {
+            this.selectedDayTo = day;
+        }
         if (this.timeToInput !== null) {
             this.updateDateToInput();
             this.updateTimeToInput();
@@ -724,14 +772,14 @@ var Calendar = function (date_from_input_id,
      */
     this.updateDateTimeFromInput = function () {
         this.updateDateFromInput();
-        this.dateFromInput.value = this.dateFromInput.value + ' ' + this.updateTimeFromInput();
+        this.dateFromInput.value = this.dateFromInput.value + ' ' + this.selectedHoursFrom + ':' + this.selectedMinutesFrom;
     };
     /**
     * Обновление текущей выбранной даты окончания периода
     */
     this.updateDateTimeToInput = function () {
         this.updateDateToInput();
-        this.dateToInput.value = this.dateToInput.value + ' ' + this.updateTimeToInput();
+        this.dateToInput.value = this.dateToInput.value + ' ' + this.selectedHoursTo + ':' + this.selectedMinutesTo;
     };
     /**
      * Обновление текущей выбранной даты начала периода
@@ -941,9 +989,9 @@ var Calendar = function (date_from_input_id,
             this.show(this.dateCalendarContainer)
         } else {
             this.unHighLightDays();
-            if (this.selectDateEventSource.id == 'date_from') {
+            if (this.selectDateEventSource == this.dateFromInput) {
                 this.pickedDayFrom = this.pickedMonthFrom = this.pickedYearFrom = null;
-            } else if (this.selectDateEventSource.id == 'date_to') {
+            } else if (this.selectDateEventSource == this.dateToInput) {
                 this.pickedDayTo = this.pickedMonthTo = this.pickedYearTo = null;
             }
             this.hide(this.dateCalendarContainer);
@@ -1219,11 +1267,11 @@ var Calendar = function (date_from_input_id,
             this.selectedMinutesTo = this.minutesSelector.value;
             this.updateSelectedDateTimeToWithInputs(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
         } else {
-            if (this.selectDateEventSource.id == 'date_from') {
+            if (this.selectDateEventSource == this.dateFromInput) {
                 this.selectedHoursFrom = this.hoursSelector.value;
                 this.selectedMinutesFrom = this.minutesSelector.value;
                 this.updateSelectedDateTimeFromWithInputs(this.pickedYearFrom, this.pickedMonthFrom, this.pickedDayFrom);
-            } else if (this.selectDateEventSource.id == 'date_to') {
+            } else if (this.selectDateEventSource == this.dateToInput) {
                 this.selectedHoursTo = this.hoursSelector.value;
                 this.selectedMinutesTo = this.minutesSelector.value;
                 this.updateSelectedDateTimeToWithInputs(this.pickedYearTo, this.pickedMonthTo, this.pickedDayTo);
@@ -1305,8 +1353,8 @@ var Calendar = function (date_from_input_id,
     this.calculateDayNodeWidth = function () {
         // Временно создаем и добавляем элемент, содержащий дату, в дерево HTML документа, чтобы вычислить размер в пикселях
         // дабы получить отображение этого элемента в виде квадрата
-        let windowWidth = window.innerWidth;
-        let calendarContainerWidth = getInnerNodeWidth(this.dateCalendarContainer, windowWidth);
+        let bodyClientWidth = document.body.clientWidth;
+        let calendarContainerWidth = getInnerNodeWidth(this.dateCalendarContainer, bodyClientWidth);
         let monthsContainerWidth = getInnerNodeWidth(this.monthsContainer, calendarContainerWidth);
         let monthContainerWidth = getInnerNodeWidth(this.monthsContainer.getElementsByClassName('month-container')[0], monthsContainerWidth);
         let dayContainerNode = document.createElement('div');
@@ -1434,7 +1482,7 @@ var Calendar = function (date_from_input_id,
         if (this.isSelectTimeWithDateTogetherAllowed) {
             var highLightedMonth = null;
             var highLightedDay = null;
-            if (this.selectDateEventSource.id == 'date_from') {
+            if (this.selectDateEventSource == this.dateFromInput) {
                 if (this.pickedMonthFrom !== null) {
                     highLightedMonth = this.pickedMonthFrom;
                 } else if (this.selectedMonthFrom !== null) {
@@ -1454,7 +1502,7 @@ var Calendar = function (date_from_input_id,
                         }
                     }
                 }
-            } else if (this.selectDateEventSource.id == 'date_to') {
+            } else if (this.selectDateEventSource == this.dateToInput) {
                 if (this.pickedMonthTo !== null) {
                     highLightedMonth = this.pickedMonthTo;
                 } else if (this.selectedMonthTo !== null) {
@@ -1487,7 +1535,7 @@ var Calendar = function (date_from_input_id,
         } else {
             let monthContainerNodesWithSameYear = null;
             let dayContainerNode = null;
-            if (this.selectDateEventSource.id == 'date_from') {
+            if (this.selectDateEventSource == this.dateFromInput) {
                 if (this.selectedYearFrom !== null &&
                     this.selectedMonthFrom !== null &&
                     this.selectedDayFrom !== null) {
@@ -1500,8 +1548,18 @@ var Calendar = function (date_from_input_id,
                             }
                         }
                     }
+                    if (this.selectedHoursFrom !== null && this.selectedMinutesFrom !== null) {
+                        this.hoursSelector.value = this.selectedHoursFrom;
+                        if (this.hoursSelector.value.length == 1) {
+                            this.hoursSelector.value = '0' + this.hoursSelector.value;
+                        }
+                        this.minutesSelector.value = this.selectedMinutesFrom;
+                        if (this.minutesSelector.value.length == 1) {
+                            this.minutesSelector.value = '0' + this.minutesSelector.value;
+                        }
+                    }
                 }
-            } else if (this.selectDateEventSource.id == 'date_to') {
+            } else if (this.selectDateEventSource == this.dateToInput) {
                 if (this.selectedYearTo !== null &&
                     this.selectedMonthTo !== null &&
                     this.selectedDayTo !== null) {
@@ -1512,6 +1570,16 @@ var Calendar = function (date_from_input_id,
                             if (dayContainerNode) {
                                 dayContainerNode.classList.add('selected');
                             }
+                        }
+                    }
+                    if (this.selectedHoursTo !== null && this.selectedMinutesTo !== null) {
+                        this.hoursSelector.value = this.selectedHoursTo;
+                        if (this.hoursSelector.value.length == 1) {
+                            this.hoursSelector.value = '0' + this.hoursSelector.value;
+                        }
+                        this.minutesSelector.value = this.selectedMinutesTo;
+                        if (this.minutesSelector.value.length == 1) {
+                            this.minutesSelector.value = '0' + this.minutesSelector.value;
                         }
                     }
                 }
@@ -1647,7 +1715,9 @@ function getInnerNodeWidth(node, parentWidth) {
     if (window.getComputedStyle(node).boxSizing == 'border-box') {
         let nodePaddingLeft = parseFloat(window.getComputedStyle(node).paddingLeft);
         let nodePaddingRight = parseFloat(window.getComputedStyle(node).paddingRight);
-        nodeWidth = nodeWidth - (nodePaddingLeft + nodePaddingRight);
+        let nodeBorderLeftWidth = parseFloat(window.getComputedStyle(node).borderLeftWidth);
+        let nodeBorderRightWidth = parseFloat(window.getComputedStyle(node).borderRightWidth);
+        nodeWidth = nodeWidth - (nodePaddingLeft + nodePaddingRight + nodeBorderLeftWidth + nodeBorderRightWidth);
     }
     return nodeWidth;
 }
