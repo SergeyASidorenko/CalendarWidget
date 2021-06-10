@@ -132,7 +132,7 @@
 }
 
 #calendar .day-container.weekend {
-    background-color: tomato;
+    background-color: #da6f5c;
 }
 
 #calendar .day-container.unactive {
