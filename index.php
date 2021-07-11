@@ -9,12 +9,13 @@
 </head>
 
 <body>
-    <div id="container">
-        <input type="text" name="date_from" id="date_from" placeholder="Выберите дату начала ...">
-        <input type="text" name="time_from" id="time_from" placeholder="Выберите время начала ...">
-        <input type="text" name="date_to" id="date_to" placeholder="Выберите дату окончания ...">
-        <input type="text" name="time_to" id="time_to" placeholder="Выберите время окончания ...">
+    <div class="container">
+        <input type="text" name="date" id="date" placeholder="Выберите дату ...">
     </div>
     <script src="js/main.js"></script>
+    <script>
+        var calendar = new Calendar('date');
+        calendar.init();
+    </script>
 </body>
 </html>

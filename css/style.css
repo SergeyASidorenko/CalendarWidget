@@ -18,18 +18,25 @@
     color: white;
 }
 
-#calendar {
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-    position   : absolute;
-    width      : 30%;
-    color      : #eee;
-    padding    : 1em;
-    background : linear-gradient(180deg, #88b5ff, #468dff);
-    z-index    : 0;
-    text-align : center;
+.calendar {
+    font-family       : Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    position          : absolute;
+    width             : 30%;
+    color             : #eee;
+    padding           : 1em;
+    background        : linear-gradient(180deg, #88b5ff, #468dff);
+    z-index           : 0;
+    text-align        : center;
+    box-sizing        : content-box;
+    -webkit-box-sizing: content-box;
 }
 
-#time-selector {
+.calendar * {
+    box-sizing        : content-box;
+    -webkit-box-sizing: content-box;
+}
+
+.time-selector {
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     position   : absolute;
     width      : 20%;
@@ -40,7 +47,12 @@
     box-sizing : border-box;
 }
 
-#time-selector input {
+.time-selector * {
+    box-sizing        : content-box;
+    -webkit-box-sizing: content-box;
+}
+
+.time-selector input {
     width           : 25%;
     background-color: transparent;
     border-top      : 1px solid white;
@@ -54,14 +66,15 @@
     color           : white;
     height          : 32px;
     vertical-align  : middle;
+    text-align      : center;
 }
 
-#time-selector label {
+.time-selector label {
     margin-right: 10px;
 }
 
-#time-selector #apply-time-button,
-#calendar #apply-date-time-button {
+.time-selector .apply-time-button,
+.calendar .apply-date-time-button {
     background-color: #5191fa;
     border          : 1px solid white;
     padding         : .5em;
@@ -69,24 +82,24 @@
     margin-top      : 15px;
 }
 
-#time-selector #apply-time-button:hover,
-#calendar #apply-date-time-button:hover {
+.time-selector .apply-time-button:hover,
+.calendar .apply-date-time-button:hover {
     background-color: #85b4ff;
 }
 
-#hours-container {
+.hours-container {
     width     : 50%;
     display   : inline-block;
     text-align: center;
 }
 
-#minutes-container {
+.minutes-container {
     width     : 50%;
     display   : inline-block;
     text-align: center;
 }
 
-#calendar .year {
+.calendar .year {
     padding   : .1em;
     cursor    : pointer;
     display   : inline-block;
@@ -94,11 +107,11 @@
     text-align: center;
 }
 
-#calendar .year:hover {
+.calendar .year:hover {
     background-color: #85b4ff;
 }
 
-#calendar .month-container {
+.calendar .month-container {
     float     : left;
     padding   : .5em;
     box-sizing: border-box;
@@ -106,20 +119,20 @@
 }
 
 
-#calendar .month-container h4 {
+.calendar .month-container h4 {
     text-align    : center;
     text-transform: uppercase;
     margin        : 20px 0;
     font-size     : 18px;
 }
 
-#calendar .day-container {
+.calendar .day-container {
     float   : left;
     overflow: hidden;
     width   : 14.2857%;
 }
 
-#calendar .day {
+.calendar .day {
     width     : 100%;
     height    : 100%;
     position  : relative;
@@ -131,35 +144,35 @@
     z-index   : 2;
 }
 
-#calendar .day-container.weekend {
+.calendar .day-container.weekend {
     background-color: #da6f5c;
 }
 
-#calendar .day-container.unactive {
+.calendar .day-container.unactive {
     background-color: grey;
     cursor          : default;
 }
 
-#calendar .day-container.in_selected_period {
+.calendar .day-container.in_selected_period {
     background-color: orange;
 }
 
-#calendar .day-container.selected {
+.calendar .day-container.selected {
     background-color: orange;
 }
 
-#calendar .calendar-time-input {
+.calendar .calendar-time-input {
     float: left;
     width: 80px;
 }
 
-#months {
+.months {
     position: relative;
     overflow: hidden;
     display : flex;
 }
 
-#year-indicator {
+.year-indicator {
     font-size : 26px;
     cursor    : pointer;
     text-align: center;
@@ -167,7 +180,7 @@
     margin    : 0;
 }
 
-#leaf-over-future {
+.leaf-over-future {
     position   : absolute;
     top        : 0;
     right      : .5em;
@@ -182,7 +195,7 @@
     margin-top : 20px;
 }
 
-#leaf-over-past {
+.leaf-over-past {
     position   : absolute;
     top        : 0;
     left       : .5em;
@@ -197,8 +210,8 @@
     margin-top : 20px;
 }
 
-#leaf-over-past:hover,
-#leaf-over-future:hover {
+.leaf-over-past:hover,
+.leaf-over-future:hover {
     color           : #5191fa;
     background-color: white;
 }
@@ -254,17 +267,21 @@
 
 .up-button,
 .down-button {
-    display         : inline-block;
-    width           : 32px;
-    height          : 32px;
-    font-size       : 24px;
-    color           : white;
-    border          : 1px solid white;
-    vertical-align  : middle;
-    text-align      : center;
-    background-color: transparent;
-    box-sizing      : border-box;
-    cursor          : pointer;
+    display            : inline-block;
+    width              : 32px;
+    height             : 32px;
+    font-size          : 22px;
+    color              : white;
+    border             : 1px solid white;
+    vertical-align     : middle;
+    text-align         : center;
+    background-color   : transparent;
+    box-sizing         : border-box;
+    cursor             : pointer;
+    user-select        : none;
+    -o-user-select     : none;
+    -moz-user-select   : none;
+    -webkit-user-select: none;
 }
 
 .up-button:hover,
