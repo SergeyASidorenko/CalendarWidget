@@ -1,31 +1,11 @@
-#container {
-    background-color: #669;
-    width           : 300px;
-    margin          : auto;
-    text-align      : center;
-    padding         : 10px;
-}
-
-#container input {
-    width           : 80%;
-    background-color: transparent;
-    border          : 1px solid white;
-    padding         : .25em .5em;
-    margin          : 10px 0;
-}
-
-#container input::placeholder {
-    color: white;
-}
-
 .calendar {
-    font-family       : Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-family       : 'Open Sans', sans-serif;
     position          : absolute;
     width             : 30%;
     color             : #eee;
     padding           : 1em;
     background        : linear-gradient(180deg, #88b5ff, #468dff);
-    z-index           : 0;
+    z-index           : 99993;
     text-align        : center;
     box-sizing        : content-box;
     -webkit-box-sizing: content-box;
@@ -37,7 +17,7 @@
 }
 
 .time-selector {
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-family: 'Open Sans', sans-serif;
     position   : absolute;
     width      : 20%;
     text-align : center;
@@ -145,7 +125,7 @@
 }
 
 .calendar .day-container.weekend {
-    background-color: #da6f5c;
+    background-color: tomato;
 }
 
 .calendar .day-container.unactive {
@@ -153,7 +133,7 @@
     cursor          : default;
 }
 
-.calendar .day-container.in_selected_period {
+.calendar .day-container.in-selected-period {
     background-color: orange;
 }
 
@@ -241,9 +221,10 @@
     left      : 0;
     top       : 0;
     display   : none;
-    background: radial-gradient(circle closest-side at 50% 50%, rgba(255, 255, 255, 0.5), transparent);
     z-index   : 1;
-    transition: .5s all;
+    border    : 2px solid yellow;
+    box-shadow: 0 0 5px yellow;
+    box-sizing: border-box;
 }
 
 .close-button {
@@ -282,6 +263,15 @@
     -o-user-select     : none;
     -moz-user-select   : none;
     -webkit-user-select: none;
+
+}
+
+.up-button {
+    line-height: 28px;
+}
+
+.down-button {
+    line-height: 26px;
 }
 
 .up-button:hover,
