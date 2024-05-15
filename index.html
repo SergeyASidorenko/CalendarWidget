@@ -17,8 +17,8 @@
     </div>
     <script src="js/main.js"></script>
     <script>
-    let calendar = new Calendar('.date', 'click', 100);
-    calendar.init();
+        let calendar = new Calendar({ queryPath: '.date', event: 'click', possibleDaysRange: 100 });
     </script>
 </body>
+
 </html>

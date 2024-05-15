@@ -32,6 +32,9 @@ class Calendar {
     _downHoursEndButton;
     _upMinutesEndButton;
     _downMinutesEndButton;
+    // Кнопка закрытия окна календаря
+    _closeCalendarContainerButton;
+    //-------------------------------------------
     _yearIndicator;
     _leafOverFuture;
     _leafOverPast;
@@ -41,24 +44,26 @@ class Calendar {
     _endPossibleMonth;
     _startPossibleDay;
     _endPossibleDay;
+    _possibleYears;
     //-------------------------------------------
+    _selectedStartYear;
     _selectedYearStart;
-    _selectedYearEnd;
-    _selectedMonthStart;
-    _selectedMonthEnd;
-    _selectedDayStart;
-    _selectedDayEnd;
-    _selectedHoursStart;
-    _selectedHoursEnd;
-    _selectedMinutesStart;
-    _selectedMinutesEnd;
+    _selectedStartMonth;
+    _selectedEndMonth;
+    _selectedStartDay;
+    _selectedEndDay;
+    _selectedStartHour;
+    _selectedEndHour;
+    _selectedStartMinute;
+    _selectedEndMinutes;
     //-------------------------------------------
-    _pickedYearStart;
-    _pickedYearEnd;
-    _pickedMonthStart;
-    _pickedMonthEnd;
-    _pickedDayStart;
-    _pickedDayEnd;
+    _pickedStartYear;
+    _pickedEndYear;
+    _pickedStartMonth;
+    _pickedEndMonth;
+    _pickedStartDay;
+    _pickedEndDay;
+    //-------------------------------------------
     _endYearInRange;
     _endMonthInRange;
     _endDayInRange;
@@ -69,22 +74,19 @@ class Calendar {
     _curMonth;
     _curDay;
     _displayedYearToMonthsArray;
-    _possibleYears;
     // Массив узлов, содержащих долступные к выбору года
     _yearNodes;
+    _dayNodes;
+    _dependentNode;
     _amountOfMonthsToDisplay;
-    //  Количество рядов элементов, предназначенных для выбора годов
+    // Количество рядов элементов, предназначенных для выбора годов
     _amountOfRowsForYears;
     _monthNames;
-    _dayNames;
-    _dayNodes;
     _selectTimeEventSource;
     _dayUnderCursorFrame;
-    _closeCalendarContainerButton;
     _dayNodeWidth;
     _dayNodeHighlightColor;
     //-------------------------------------------
-    _dependentNode;
     //-------------------------------------------
     // Массив дней, которые нужно отобразить в браузере 
     // и одновременно это массив дней, доступных для выбора
@@ -106,8 +108,9 @@ class Calendar {
     isShowDate;
     // Разрешается ли ввод времени в том же окне, где и выбор даты
     isShowTime;
-    // Кнопка закрытия окна календаря
-    construct({ queryPath,
+    queryPath;
+    static _dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Суб', 'Вс'];
+    constructor({ queryPath,
         event = 'click',
         possibleDaysRange = 100,
         isShowDate = true,
@@ -124,7 +127,6 @@ class Calendar {
         this._displayedYearToMonthsArray = [];
         this._possibleYears = [];
         this._monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-        this._dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Суб', 'Вс'];
         this._dayNodes = [];
         // Массив узлов, содержащих долступные к выбору года
         this._yearNodes = [];
@@ -154,19 +156,13 @@ class Calendar {
         this.isShowTime = isShowTime;
         // Кнопка закрытия окна календаря
         this._dependentNodeUpdateCallBack = dependentNodeUpdateCallBack;
-        document.querySelectorAll(queryPath).forEach(function (node) {
-            if (node.readOnly) {
-                return;
-            }
-            if (!node.disabled && !node.readOnly) {
-                node.readOnly = true;
-            }
-        });
+        this.queryPath = queryPath;
+        this.init();
     }
     /**
      * Определение количества дней в месяце данного года
      */
-    getDaysCountOfMonth(year, month) {
+    static getDaysCountOfMonth(year, month) {
         if (month <= AUGUST) {
             if (month == FEBRUARY) {
                 return year % 4 == 0 ? 29 : 28;
@@ -187,7 +183,7 @@ class Calendar {
     /**
      * Определение русского наименования месяца
      */
-    getMonthName(month) {
+    static getMonthName(month) {
         return this._monthNames[month];
     };
 
@@ -197,7 +193,86 @@ class Calendar {
     isDisplayed(container) {
         return window.getComputedStyle(container).display != 'none';
     };
+    /**
+ * Инициализация календарей
+ */
+    init() {
+        document.querySelectorAll(this.queryPath).forEach(node => {
+            if (!node.disabled && !node.readOnly) {
+                node.readOnly = true;
+            }
+            node.addEventListener(this._event, this.toggle);
+        });
+    }
+    /**
+     * Начальная отрисовка календаря
+    */
+    draw(event) {
+        let eventSource = event.target;
+        let date = new Date();
+        this._curYear = date.getFullYear();
+        this._curMonth = date.getMonth();
+        this._curDay = date.getDate();
+        this._curDisplayedYear = this._curYear;
+        this._curDisplayedMonth = this._curMonth;
 
+        this._dateCalendarContainer = document.createElement('div');
+        this._dateCalendarContainer.className = 'calendar';
+        this._dateCalendarContainer.style.display = 'none';
+        document.body.appendChild(this._dateCalendarContainer);
+        if (this.isShowDate) {
+            this.#createDateCalendarContainer();
+        }
+        if (this.isShowTime) {
+            this.#createTimeSelectorContainer();
+        }
+        this._closeCalendarContainerButton = document.createElement('span');
+        this._closeCalendarContainerButton.className = 'close-button';
+        this._closeCalendarContainerButton.innerHTML = '&#10006;';
+        this._dateCalendarContainer.appendChild(this._closeCalendarContainerButton);
+        // Если в поле ввода есть какие-то данные - "подтягиваем" их
+        if (eventSource.value.replace(/(\S)/g, '$1').length > 0) {
+            this.#initSelectedDateTimeParams();
+        }
+        if (this.isShowDate) {
+            // Добавляем событие обработки нажатий левой кнопки мыши внутри календаря
+            this._dateCalendarContainer.addEventListener('click', this.#daysContainerClickListener.bind(this));
+            // Добавляем событие обработки нажатий кнопки перемотки месяцев календаря в будущее
+            this._leafOverFuture.addEventListener('click', this.#leafOverFutureClickHandler.bind(this));
+            // Добавляем событие обработки нажатий кнопки перемотки месяцев календаря в прошлое
+            this._leafOverPast.addEventListener('click', this.#leafOverPastClickHandler.bind(this));
+            // Добавляем событие обработки нажатий кнопки с изображением отображаемого в календаре года
+            this._yearIndicator.addEventListener('click', this.#yearIndicatorClickHandler.bind(this));
+            // Добавляем событие обработки нажатий кнопки мыши внутри контейнера выбора годов
+            this._yearsContainer.addEventListener('click', this.#yearsContainerClickHandler.bind(this));
+            // Если доступен выбор диапазона дат, также добавляем обработчик на перемещение мыши - чтобы
+            // была подсветка диапазона дат
+            if (this.isPeriodMode) {
+                this._dateCalendarContainer.addEventListener('mouseover', this.#mouseOverHandlerWhenRangesAllowed.bind(this));
+            } else {
+                this._dateCalendarContainer.addEventListener('mouseover', this.#mouseOverCalendarHandler.bind(this));
+                this._dateCalendarContainer.addEventListener('mouseout', this.#calendarMouseOutHandler.bind(this));
+            }
+        }
+        // Добавляем события, по которым будут отображаться календарь и окно выбора времени
+        eventSource.addEventListener(this._event, this.toggle.bind(this));
+        this._closeCalendarContainerButton.addEventListener('click', this.#closeCalendarContainerButtonClickHandler.bind(this));
+        // Добавляем обработчик нажатия мышки вне календарей для их скрытия
+        // this._addBodyClickEventHandler();
+        this.redrawDays();
+        let eventSourceCoorinates = eventSource.getBoundingClientRect();
+        let dateCalendarContainerCoorinates = this._dateCalendarContainer.getBoundingClientRect();
+        if (dateCalendarContainerCoorinates.width + eventSourceCoorinates.left > document.documentElement.clientWidth) {
+            this._dateCalendarContainer.style.top = eventSourceCoorinates.bottom + window.scrollY + 'px';
+            this._dateCalendarContainer.style.right = 0;
+        } else if (dateCalendarContainerCoorinates.height + eventSourceCoorinates.bottom > document.documentElement.clientHeight) {
+            this._dateCalendarContainer.style.top = window.scrollY + 'px';
+            this._dateCalendarContainer.style.left = eventSourceCoorinates.left + window.scrollX + 'px';
+        } else {
+            this._dateCalendarContainer.style.top = eventSourceCoorinates.bottom + window.scrollY + 'px';
+            this._dateCalendarContainer.style.left = eventSourceCoorinates.left + window.scrollX + 'px';
+        }
+    };
     /**
      * Перерисовка дней (например, для нового периоды), отображающихся в календаре
      */
@@ -217,12 +292,12 @@ class Calendar {
         this._displayedYearToMonthsArray.forEach(function (monthsToDisplay, yearToDisplay) {
             monthsToDisplay.forEach(function (days, monthToDisplay) {
                 let date = new Date(yearToDisplay, monthToDisplay, 1);
-                daysCountOfCurMonth = this.getDaysCountOfMonth(yearToDisplay, monthToDisplay);
+                daysCountOfCurMonth = Calendar.getDaysCountOfMonth(yearToDisplay, monthToDisplay);
                 let curMonthContainer = this._monthsContainer.getElementsByClassName('month-container')[monthIndex];
                 curMonthContainer.dataset.month = monthToDisplay;
                 curMonthContainer.dataset.year = yearToDisplay;
                 let monthHeadingNode = curMonthContainer.getElementsByClassName('month-heading')[0];
-                monthHeadingNode.textContent = this.getMonthName(monthToDisplay);
+                monthHeadingNode.textContent = Calendar.getMonthName(monthToDisplay);
                 for (let dayToDisplay = 1; dayToDisplay <= daysCountOfCurMonth; dayToDisplay++) {
                     date.setDate(dayToDisplay);
                     dayContainerNode = this.#getDOMNodeByAttributeValue(curMonthContainer, 'data-day', dayToDisplay);
@@ -277,9 +352,9 @@ class Calendar {
                             dayContainerNode.classList.remove('unactive');
                         }
                     }
-                    if (this._selectedYearStart == yearToDisplay &&
-                        this._selectedMonthStart == monthToDisplay &&
-                        this._selectedDayStart == dayToDisplay) {
+                    if (this._selectedStartYear == yearToDisplay &&
+                        this._selectedStartMonth == monthToDisplay &&
+                        this._selectedStartDay == dayToDisplay) {
                         dayContainerNode.classList.add('selected');
                     }
                 };
@@ -299,63 +374,7 @@ class Calendar {
             }.bind(this));
         }.bind(this));
     }
-    /**
-     * Начальная отрисовка календаря
-     */
-    draw(event) {
-        let date = new Date();
-        this._curYear = date.getFullYear();
-        this._curMonth = date.getMonth();
-        this._curDay = date.getDate();
-        this._curDisplayedYear = this._curYear;
-        this._curDisplayedMonth = this._curMonth;
 
-        this._dateCalendarContainer = document.createElement('div');
-        this._dateCalendarContainer.className = 'calendar';
-        this._dateCalendarContainer.style.display = 'none';
-        document.body.appendChild(this._dateCalendarContainer);
-        if (this._isShowDate) {
-            this.#createDateCalendarContainer();
-        }
-        if (this.isShowTime) {
-            this.#createTimeSelectorContainer();
-        }
-        this._closeCalendarContainerButton = document.createElement('span');
-        this._closeCalendarContainerButton.className = 'close-button';
-        this._closeCalendarContainerButton.innerHTML = '&#10006;';
-        this._dateCalendarContainer.appendChild(this._closeCalendarContainerButton);
-        // Если в поле ввода есть какие-то данные - "подтягиваем" их
-        if (event.target.value.replace(/(\S)/g, '$1').length > 0) {
-            this._initSelectedDateTimeParams();
-        }
-        if (this._isShowDate) {
-            // Добавляем событие обработки нажатий левой кнопки мыши внутри календаря
-            this._dateCalendarContainer.addEventListener('click', this.#daysContainerClickListener.bind(this));
-            // Добавляем событие обработки нажатий кнопки перемотки месяцев календаря в будущее
-            this._leafOverFuture.addEventListener('click', this.#leafOverFutureClickHandler.bind(this));
-            // Добавляем событие обработки нажатий кнопки перемотки месяцев календаря в прошлое
-            this._leafOverPast.addEventListener('click', this.#leafOverPastClickHandler.bind(this));
-            // Добавляем событие обработки нажатий кнопки с изображением отображаемого в календаре года
-            this._yearIndicator.addEventListener('click', this.#yearIndicatorClickHandler.bind(this));
-            // Добавляем событие обработки нажатий кнопки мыши внутри контейнера выбора годов
-            this._yearsContainer.addEventListener('click', this.#yearsContainerClickHandler.bind(this));
-            // Если доступен выбор диапазона дат, также добавляем обработчик на перемещение мыши - чтобы
-            // была подсветка диапазона дат
-            if (this._isPeriodMode) {
-                this._dateCalendarContainer.addEventListener('mouseover', this.#mouseOverHandlerWhenRangesAllowed.bind(this));
-            } else {
-                this._dateCalendarContainer.addEventListener('mouseover', this.#mouseOverCalendarHandler.bind(this));
-                this._dateCalendarContainer.addEventListener('mouseout', this.#calendarMouseOutHandler.bind(this));
-            }
-        }
-        // Добавляем события, по которым будут отображаться календарь и окно выбора времени
-        event.target.addEventListener(this._event, this.toggle.bind(this));
-        this._closeCalendarContainerButton.addEventListener('click', this.#closeCalendarContainerButtonClickHandler.bind(this));
-        // Добавляем обработчик нажатия мышки вне календарей для их скрытия
-        // this._addBodyClickEventHandler();
-        this.redrawDays();
-
-    };
     /**
      * Обработчик нажатия на кнопку закрыть календаря
      */
@@ -368,7 +387,7 @@ class Calendar {
     #mouseOverHandlerWhenRangesAllowed(e) {
         let target = e.target;
         let dayContainerNode = target.parentNode;
-        if (target.classList.contains('day') && this._selectedDayStart !== null && this._selectedDayEnd === null) {
+        if (target.classList.contains('day') && this._selectedStartDay !== null && this._selectedEndDay === null) {
             // Конечный год диапазона дат, выделенных цветом
             let newEndYearInRange = parseInt(dayContainerNode.parentNode.dataset.year);
             // Конечный месяц диапазона дат, выделенных цветом
@@ -425,15 +444,15 @@ class Calendar {
             let curMonth = parseInt(dayContainerNode.parentNode.dataset.month);
             // Конечная дата диапазона дат, выделенных цветом
             let curDay = parseInt(dayContainerNode.dataset.day);
-            if (!this._isShowTime) {
-                if (this._isPeriodMode) {
+            if (!this.isShowTime) {
+                if (this.isPeriodMode) {
                     // TODO
                 } else {
                     this.updateDateStart(curYear, curMonth, curDay, true);
                 }
                 this.toggle(e);
             } else {
-                if (this._isPeriodMode) {
+                if (this.isPeriodMode) {
                     // TODO
                 } else {
                     this.#updatePickedDateStart(curYear, curMonth, curDay);
@@ -450,9 +469,9 @@ class Calendar {
             (this._endYearInRange <= newEnd &&
                 (this._endMonthInRange <= newMonth || (this._endMonthInRange > newMonth && this._endYearInRange < newEnd)) &&
                 (this._endDayInRange <= newDay || (this._endDayInRange > newDay && this._endMonthInRange < newMonth)))) {
-            let startMonthInCurIteration = this._selectedMonthStart;
-            let startDayInCurIteration = this._selectedDayStart;
-            for (let year = this._selectedYearStart; year <= newEnd; year++) {
+            let startMonthInCurIteration = this._selectedStartMonth;
+            let startDayInCurIteration = this._selectedStartDay;
+            for (let year = this._selectedStartYear; year <= newEnd; year++) {
                 let endMonthInCurIteration = null;
                 if (year < newEnd) {
                     endMonthInCurIteration = DECEMBER;
@@ -504,27 +523,27 @@ class Calendar {
      * Обновление текущей введенной даты начала периода
      */
     #updatePickedDateStart(year, month, day) {
-        this._pickedYearStart = year;
-        this._pickedMonthStart = month;
-        this._pickedDayStart = day;
+        this._pickedStartYear = year;
+        this._pickedStartMonth = month;
+        this._pickedStartDay = day;
     };
 
     /**
      * Обновление текущей введенной даты окончания периода 
      */
     #updatePickedDateEnd(year, month, day) {
-        this._pickedYearEnd = year;
-        this._pickedMonthEnd = month;
-        this._pickedDayEnd = day;
+        this._pickedEndYear = year;
+        this._pickedEndMonth = month;
+        this._pickedEndDay = day;
     };
     /**
      * Обновление текущей выбранной даты начала периода
      */
     updateSelectedDateStart(year, month, day) {
         if (year !== null && month !== null && day !== null) {
-            this._selectedYearStart = year;
-            this._selectedMonthStart = month;
-            this._selectedDayStart = day;
+            this._selectedStartYear = year;
+            this._selectedStartMonth = month;
+            this._selectedStartDay = day;
         }
     };
     /**
@@ -532,7 +551,7 @@ class Calendar {
      */
     updateDateStart(input, year, month, day, triggerChangeEvent = false) {
         this.updateSelectedDateStart(year, month, day);
-        let date = new Date(this._selectedYearStart, this._selectedMonthStart, this._selectedDayStart);
+        let date = new Date(this._selectedStartYear, this._selectedStartMonth, this._selectedStartDay);
         let tempArray = input.value.split('');
         tempArray.splice(0, 10, date.toLocaleDateString().slice(0, 10));
         this.#updateInputValue(tempArray.join(''), triggerChangeEvent);
@@ -545,9 +564,9 @@ class Calendar {
      */
     updateSelectedDateEnd(year, month, day) {
         if (year !== null && month !== null && day !== null) {
-            this._selectedYearEnd = year;
-            this._selectedMonthEnd = month;
-            this._selectedDayEnd = day;
+            this._selectedYearStart = year;
+            this._selectedEndMonth = month;
+            this._selectedEndDay = day;
         }
     };
 
@@ -556,10 +575,10 @@ class Calendar {
      */
     updateDateEnd(input, year, month, day, triggerChangeEvent = false) {
         this.updateSelectedDateEnd(year, month, day);
-        let date = new Date(this._selectedYearStart, this._selectedMonthStart, this._selectedDayStart);
+        let date = new Date(this._selectedStartYear, this._selectedStartMonth, this._selectedStartDay);
         let dateString = date.toLocaleDateString().slice(0, 10);
         let tempArray = input.value.split('');
-        if (this._isShowTime) {
+        if (this.isShowTime) {
             tempArray.splice(19, 31, ' - ' + dateString);
         } else {
             tempArray.splice(13, 25, ' - ' + dateString);
@@ -570,8 +589,8 @@ class Calendar {
      * Обновление текущего времени начала периода
      */
     updateTimeStart(input, hours, minutes, triggerChangeEvent = false) {
-        this._selectedHoursStart = parseInt(hours);
-        this._selectedMinutesStart = parseInt(minutes);
+        this._selectedStartHour = parseInt(hours);
+        this._selectedStartMinute = parseInt(minutes);
         if (this.isShowDate) {
             let tempArray = input.value.split('');
             tempArray.splice(11, 15, hours + ':' + minutes);
@@ -584,10 +603,10 @@ class Calendar {
      * Обновление текущего времени начала периода
      */
     updateTimeEnd(input, hours, minutes, triggerChangeEvent = false) {
-        this._selectedHoursEnd = parseInt(hours);
-        this._selectedMinutesEnd = parseInt(minutes);
+        this._selectedEndHour = parseInt(hours);
+        this._selectedEndMinutes = parseInt(minutes);
         let tempArray = input.value.split('');
-        if (this._isShowDate) {
+        if (this.isShowDate) {
             tempArray.splice(31, 36, hours + ':' + minutes);
         } else {
             tempArray.splice(8, 12, ' - ' + hours + ':' + minutes);
@@ -613,14 +632,14 @@ class Calendar {
     */
     #clearInput(input) {
         input.value = '';
-        this._selectedDayStart = this._selectedMonthStart = this._selectedYearStart = null;
-        if (this._isShowTime) {
-            this._selectedHoursStart = this._selectedMinutesStart = null;
+        this._selectedStartDay = this._selectedStartMonth = this._selectedStartYear = null;
+        if (this.isShowTime) {
+            this._selectedStartHour = this._selectedStartMinute = null;
         }
-        if (this._isPeriodMode) {
-            this._selectedDayEnd = this._selectedMonthEnd = this._selectedYearEnd = null;
-            if (this._isShowTime) {
-                this._selectedHoursEnd = this._selectedMinutesEnd = null;
+        if (this.isPeriodMode) {
+            this._selectedEndDay = this._selectedEndMonth = this._selectedYearStart = null;
+            if (this.isShowTime) {
+                this._selectedEndHour = this._selectedEndMinutes = null;
             }
         }
     };
@@ -653,37 +672,24 @@ class Calendar {
     /**
      * Удаление календаря из дерева DOM
      */
-    #removeCalendar() {
-        this._dateCalendarContainer.parentNode.removeChild(this._dateCalendarContainer);
-        this._dateCalendarContainer = null;
+    #removeNode(node) {
+        node.parentNode.removeChild(this._dateCalendarContainer);
     };
     /**
      * Переключение каледаря из видимого состояния в невидимое или наоборот
      */
-    toggle(e) {
+    toggle(event) {
         if (!this._dateCalendarContainer) {
-            let eventSource = e.target;
-            let eventSourceCoorinates = eventSource.getBoundingClientRect();
-            if (this._isShowDate) {
-                this._highLightDays();
+            if (this.isShowDate) {
+                this.highLightDays();
             }
-            if (this._isShowTime) {
-                this._highLightTime();
+            if (this.isShowTime) {
+                this.highLightTime();
             }
-            this._draw(e);
-            let dateCalendarContainerCoorinates = this._dateCalendarContainer.getBoundingClientRect();
-            if (dateCalendarContainerCoorinates.width + eventSourceCoorinates.left > document.documentElement.clientWidth) {
-                this._dateCalendarContainer.style.top = eventSourceCoorinates.bottom + window.scrollY + 'px';
-                this._dateCalendarContainer.style.right = 0;
-            } else if (dateCalendarContainerCoorinates.height + eventSourceCoorinates.bottom > document.documentElement.clientHeight) {
-                this._dateCalendarContainer.style.top = window.scrollY + 'px';
-                this._dateCalendarContainer.style.left = eventSourceCoorinates.left + window.scrollX + 'px';
-            } else {
-                this._dateCalendarContainer.style.top = eventSourceCoorinates.bottom + window.scrollY + 'px';
-                this._dateCalendarContainer.style.left = eventSourceCoorinates.left + window.scrollX + 'px';
-            }
+            this.draw(event);
+
         } else {
-            this._removeElement(this._dateCalendarContainer);
+            this.#removeNode(this._dateCalendarContainer);
         }
         e.stopPropagation();
     };
@@ -870,7 +876,7 @@ class Calendar {
         this._minutesStartSelector.addEventListener('keydown', this._keyDownMinutesSelectorHandler.bind(this));
         this._minutesContainer.appendChild(this._minutesStartSelector);
         this._minutesContainer.appendChild(this._upMinutesStartButton);
-        if (this._isPeriodMode) {
+        if (this.isPeriodMode) {
             //-------------------------------------------------------------
             this._upHoursEndButton = document.createElement('span');
             this._downHoursEndButton = document.createElement('span');
@@ -926,8 +932,8 @@ class Calendar {
     #applyDateTimeButtonClickListener(e) {
         if (this.isPeriodMode) {
             if (this.isShowDate) {
-                this.updateDateStart(this._pickedYearStart, this._pickedMonthStart, this._pickedDayStart);
-                this.updateDateEnd(this._pickedYearEnd, this._pickedMonthEnd, this._pickedDayEnd);
+                this.updateDateStart(this._pickedStartYear, this._pickedStartMonth, this._pickedStartDay);
+                this.updateDateEnd(this._pickedEndYear, this._pickedEndMonth, this._pickedEndDay);
             }
             if (this.isShowTime) {
                 this.updateTimeStart(this._hoursStartSelector.value, this._minutesStartSelector.value);
@@ -935,7 +941,7 @@ class Calendar {
             }
         } else {
             if (this.isShowDate) {
-                this.updateDateStart(this._pickedYearStart, this._pickedMonthStart, this._pickedDayStart);
+                this.updateDateStart(this._pickedStartYear, this._pickedStartMonth, this._pickedStartDay);
             }
             if (this.isShowTime) {
                 this.updateTimeStart(this._hoursStartSelector.value, this._minutesStartSelector.value);
@@ -1113,7 +1119,7 @@ class Calendar {
         let monthDayHeadingsContainer = document.createElement('div');
         monthDayHeadingsContainer.className = 'month-day-headings';
         for (let i = 0; i < DAYS_IN_WEEK; i++) {
-            let = monthDayHeading = document.createElement('span');
+            let monthDayHeading = document.createElement('span');
             monthDayHeading.className = 'month-day-heading';
             monthDayHeading.textContent = this._getDayNameByNumber(i);
             monthDayHeadingsContainer.appendChild(monthDayHeading);
@@ -1125,22 +1131,22 @@ class Calendar {
      * наименования дня недели по его индексу
      * @returns 
      */
-    getDayNameByNumber(dayNumber) {
-        return this._dayNames[dayNumber];
+    static getDayNameByNumber(dayNumber) {
+        return Calendar._dayNames[dayNumber];
     }
 
     /**
      * Подсветка в календаре выбранного дня соответствующего типа
      */
     highLightDays() {
-        if (this._isPeriodMode) {
-            if (this._selectedYearEnd !== null &&
-                this._selectedMonthEnd !== null &&
-                this._selectedDayEnd !== null) {
-                monthContainerNodesWithSameYear = this._getDOMNodesByAttributeValue(this._monthsContainer, 'data-year', this._selectedYearEnd);
+        if (this.isPeriodMode) {
+            if (this._selectedYearStart !== null &&
+                this._selectedEndMonth !== null &&
+                this._selectedEndDay !== null) {
+                monthContainerNodesWithSameYear = this._getDOMNodesByAttributeValue(this._monthsContainer, 'data-year', this._selectedYearStart);
                 for (let i = 0; i < monthContainerNodesWithSameYear.length; i++) {
-                    if (monthContainerNodesWithSameYear[i].dataset.month == this._selectedMonthEnd) {
-                        dayContainerNode = this._getDOMNodeByAttributeValue(monthContainerNodesWithSameYear[i], 'data-day', this._selectedDayEnd);
+                    if (monthContainerNodesWithSameYear[i].dataset.month == this._selectedEndMonth) {
+                        dayContainerNode = this._getDOMNodeByAttributeValue(monthContainerNodesWithSameYear[i], 'data-day', this._selectedEndDay);
                         if (dayContainerNode) {
                             dayContainerNode.classList.add('selected');
                         }
@@ -1150,13 +1156,13 @@ class Calendar {
         } else {
             let monthContainerNodesWithSameYear = null;
             let dayContainerNode = null;
-            if (this._selectedYearStart !== null &&
-                this._selectedMonthStart !== null &&
-                this._selectedDayStart !== null) {
-                monthContainerNodesWithSameYear = this._getDOMNodesByAttributeValue(this._monthsContainer, 'data-year', this._selectedYearStart);
+            if (this._selectedStartYear !== null &&
+                this._selectedStartMonth !== null &&
+                this._selectedStartDay !== null) {
+                monthContainerNodesWithSameYear = this._getDOMNodesByAttributeValue(this._monthsContainer, 'data-year', this._selectedStartYear);
                 for (let i = 0; i < monthContainerNodesWithSameYear.length; i++) {
-                    if (monthContainerNodesWithSameYear[i].dataset.month == this._selectedMonthStart) {
-                        dayContainerNode = this._getDOMNodeByAttributeValue(monthContainerNodesWithSameYear[i], 'data-day', this._selectedDayStart);
+                    if (monthContainerNodesWithSameYear[i].dataset.month == this._selectedStartMonth) {
+                        dayContainerNode = this._getDOMNodeByAttributeValue(monthContainerNodesWithSameYear[i], 'data-day', this._selectedStartDay);
                         if (dayContainerNode) {
                             dayContainerNode.classList.add('selected');
                         }
@@ -1168,25 +1174,25 @@ class Calendar {
     /**
      * Подсветка в календаре выбранного времени
      */
-    #highLightTime() {
-        if (this._isPeriodMode) {
-            if (this._selectedHoursEnd !== null && this._selectedMinutesEnd !== null) {
-                this._hoursStartSelector.value = this._selectedHoursEnd;
+    highLightTime() {
+        if (this.isPeriodMode) {
+            if (this._selectedEndHour !== null && this._selectedEndMinutes !== null) {
+                this._hoursStartSelector.value = this._selectedEndHour;
                 if (this._hoursStartSelector.value.length == 1) {
                     this._hoursStartSelector.value = '0' + this._hoursStartSelector.value;
                 }
-                this._minutesStartSelector.value = this._selectedMinutesEnd;
+                this._minutesStartSelector.value = this._selectedEndMinutes;
                 if (this._minutesStartSelector.value.length == 1) {
                     this._minutesStartSelector.value = '0' + this._minutesStartSelector.value;
                 }
             }
         } else {
-            if (this._selectedHoursStart !== null && this._selectedMinutesStart !== null) {
-                this._hoursStartSelector.value = this._selectedHoursStart;
+            if (this._selectedStartHour !== null && this._selectedStartMinute !== null) {
+                this._hoursStartSelector.value = this._selectedStartHour;
                 if (this._hoursStartSelector.value.length == 1) {
                     this._hoursStartSelector.value = '0' + this._hoursStartSelector.value;
                 }
-                this._minutesStartSelector.value = this._selectedMinutesStart;
+                this._minutesStartSelector.value = this._selectedStartMinute;
                 if (this._minutesStartSelector.value.length == 1) {
                     this._minutesStartSelector.value = '0' + this._minutesStartSelector.value;
                 }
@@ -1300,41 +1306,41 @@ class Calendar {
      * Инициализация выбранных ранее даты и времени
      */
     #initSelectedDateTimeParams(input) {
-        if (this._isShowDate) {
-            this._selectedDayStart = parseInt(input.value.substring(0, 2));
-            this._selectedMonthStart = parseInt(input.value.substring(3, 5)) - 1;
-            this._selectedYearStart = parseInt(input.value.substring(6, 10));
-            if (this._isShowTime) {
-                this._selectedHoursStart = parseInt(input.value.substring(11, 13));
-                this._selectedMinutesStart = parseInt(input.value.substring(14));
+        if (this.isShowDate) {
+            this._selectedStartDay = parseInt(input.value.substring(0, 2));
+            this._selectedStartMonth = parseInt(input.value.substring(3, 5)) - 1;
+            this._selectedStartYear = parseInt(input.value.substring(6, 10));
+            if (this.isShowTime) {
+                this._selectedStartHour = parseInt(input.value.substring(11, 13));
+                this._selectedStartMinute = parseInt(input.value.substring(14));
             }
-        } else if (this._isShowTime) {
-            this._selectedHoursStart = parseInt(input.value.substring(0, 2));
-            this._selectedMinutesStart = parseInt(input.value.substring(3, 5));
+        } else if (this.isShowTime) {
+            this._selectedStartHour = parseInt(input.value.substring(0, 2));
+            this._selectedStartMinute = parseInt(input.value.substring(3, 5));
         }
-        if (this._isPeriodMode) {
-            if (this._isShowDate) {
-                this._selectedYearEnd = parseInt(input.value.substring(24, 28));
-                this._selectedMonthEnd = parseInt(input.value.substring(21, 23)) - 1;
-                this._selectedDayEnd = parseInt(input.value.substring(18, 20));
-                if (this._isShowTime) {
-                    this._selectedHoursEnd = parseInt(input.value.substring(30, 32));
-                    this._selectedMinutesEnd = parseInt(input.value.substring(33));
+        if (this.isPeriodMode) {
+            if (this.isShowDate) {
+                this._selectedYearStart = parseInt(input.value.substring(24, 28));
+                this._selectedEndMonth = parseInt(input.value.substring(21, 23)) - 1;
+                this._selectedEndDay = parseInt(input.value.substring(18, 20));
+                if (this.isShowTime) {
+                    this._selectedEndHour = parseInt(input.value.substring(30, 32));
+                    this._selectedEndMinutes = parseInt(input.value.substring(33));
                 }
-            } else if (this._isShowTime) {
-                this._selectedHoursStart = parseInt(input.value.substring(8, 10));
-                this._selectedMinutesStart = parseInt(input.value.substring(11, 13));
+            } else if (this.isShowTime) {
+                this._selectedStartHour = parseInt(input.value.substring(8, 10));
+                this._selectedStartMinute = parseInt(input.value.substring(11, 13));
             }
         }
-        if (this._isShowDate) {
-            if (this._selectedYearStart !== null) {
-                this._curDisplayedYear = this._selectedYearStart;
+        if (this.isShowDate) {
+            if (this._selectedStartYear !== null) {
+                this._curDisplayedYear = this._selectedStartYear;
             }
-            if (this._selectedMonthStart !== null) {
-                this._curDisplayedMonth = this._selectedMonthStart;
+            if (this._selectedStartMonth !== null) {
+                this._curDisplayedMonth = this._selectedStartMonth;
             }
-            if (this._selectedMonthStart !== null) {
-                this._yearIndicator.textContent = this._selectedYearStart;
+            if (this._selectedStartMonth !== null) {
+                this._yearIndicator.textContent = this._selectedStartYear;
             }
         }
     };
@@ -1356,10 +1362,10 @@ class Calendar {
         let referenceInputMonth = parseInt(referenceInputDateTimeString.substring(3, 5)) - 1;
         let referenceInputYear = parseInt(referenceInputDateTimeString.substring(6, 10));
         let referenceDate = new Date(referenceInputYear, referenceInputMonth, referenceInputDay);
-        let date = new Date(this._selectedYearStart, this._selectedMonthStart, this._selectedDayStart);
+        let date = new Date(this._selectedStartYear, this._selectedStartMonth, this._selectedStartDay);
         switch (this._dependentNodeUpdateCallBack) {
             case 'notGreater':
-                if (this._isShowDate) {
+                if (this.isShowDate) {
                     if (referenceDate.getTime() <= date.getTime()) {
                         referenceDate.setFullYear(date.getFullYear());
                         referenceDate.setMonth(date.getMonth());
@@ -1368,12 +1374,12 @@ class Calendar {
                         tempArray.splice(0, 10, referenceDate.toLocaleDateString().slice(0, 10));
                         this._dependentNode.value = tempArray.join('');
                     }
-                } else if (!this._isShowDate && this._isShowTime) {
+                } else if (!this.isShowDate && this.isShowTime) {
 
                 }
                 break;
             case 'notLess':
-                if (this._isShowDate) {
+                if (this.isShowDate) {
                     if (referenceDate.getTime() >= date.getTime()) {
                         referenceDate.setFullYear(date.getFullYear());
                         referenceDate.setMonth(date.getMonth());
@@ -1382,7 +1388,7 @@ class Calendar {
                         tempArray.splice(0, 10, referenceDate.toLocaleDateString().slice(0, 10));
                         this._dependentNode.value = tempArray.join('');
                     }
-                } else if (!this._isShowDate && this._isShowTime) {
+                } else if (!this.isShowDate && this.isShowTime) {
 
                 }
                 break;
@@ -1411,24 +1417,4 @@ function getInnerNodeWidth(node, parentWidth) {
         nodeWidth = nodeWidth - (nodePaddingLeft + nodePaddingRight + nodeBorderLeftWidth + nodeBorderRightWidth);
     }
     return nodeWidth;
-}
-function createCalendar(input_id,
-    event = 'click',
-    possibleDaysRange = 100,
-    isShowDate = true,
-    isShowTime = true,
-    isPeriodMode = false,
-    isLimitPossibleDaysWithRange = false,
-    dependentNodeId = null,
-    dependentNodeUpdateCallBack = null) {
-    let calendar = new Calendar(input_id,
-        event,
-        possibleDaysRange,
-        isShowDate,
-        isShowTime,
-        isPeriodMode,
-        isLimitPossibleDaysWithRange,
-        dependentNodeId,
-        dependentNodeUpdateCallBack);
-    calendar.draw();
 }
