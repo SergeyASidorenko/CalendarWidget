@@ -204,6 +204,7 @@ class Calendar {
         this._closeCalendarContainerButton.className = 'close-button';
         this._closeCalendarContainerButton.innerHTML = '&#10006;';
         this._dateCalendarContainer.appendChild(this._closeCalendarContainerButton);
+        this._closeCalendarContainerButton.addEventListener('click', this.#closeCalendarContainerButtonClickHandler.bind(this));
         if (this.isShowDate) {
             // Добавляем событие обработки нажатий левой кнопки мыши внутри календаря
             this._dateCalendarContainer.addEventListener('click', this.#daysContainerClickListener.bind(this));
@@ -223,11 +224,10 @@ class Calendar {
                 this._dateCalendarContainer.addEventListener('mouseover', this.#mouseOverCalendarHandler.bind(this));
                 this._dateCalendarContainer.addEventListener('mouseout', this.#calendarMouseOutHandler.bind(this));
             }
+            this.redrawDays();
         }
-        this._closeCalendarContainerButton.addEventListener('click', this.#closeCalendarContainerButtonClickHandler.bind(this));
         // Добавляем обработчик нажатия мышки вне календарей для их скрытия
         // this._addBodyClickEventHandler();
-        this.redrawDays();
         let eventSourceCoorinates = this.#input.getBoundingClientRect();
         let dateCalendarContainerCoorinates = this._dateCalendarContainer.getBoundingClientRect();
         if (dateCalendarContainerCoorinates.width + eventSourceCoorinates.left > document.documentElement.clientWidth) {
@@ -632,11 +632,10 @@ class Calendar {
      */
     #calculateDisplayedYearToMonthsArray() {
         this._displayedYearsToMonths = Object.create(null);
-        let curDate = new Date();
-        let curDisplayedYear = this._selectedStartYear ?? curDate.getFullYear();
+        let curDisplayedYear = this._selectedStartYear ?? this._curYear;
         let curFutureYear = curDisplayedYear;
         let curPastYear = curDisplayedYear;
-        let curDisplayedMonth = this._selectedStartMonth ?? curDate.getMonth();
+        let curDisplayedMonth = this._selectedStartMonth ?? this._curMonth;
         let curFutureMonth = curDisplayedMonth;
         let curPastMonth = curDisplayedMonth;
         this._displayedYearsToMonths[curDisplayedYear] = Object.create(null);
@@ -1179,32 +1178,33 @@ class Calendar {
      * Инициализация выбранных ранее даты и времени
      */
     #initSelectedDateTimeParams() {
+        let inputValue = this.#input.value.trim();
         // Если в поле ввода есть какие-то данные - "подтягиваем" их
-        if (this.#input.value.replace(/(\S)/g, '$1').length > 0) {
+        if (inputValue.replace(/(\S)/g, '$1').length > 0) {
             if (this.isShowDate) {
-                this._selectedStartDay = parseInt(this.#input.value.substring(0, 2));
-                this._selectedStartMonth = parseInt(this.#input.value.substring(3, 5)) - 1;
-                this._selectedStartYear = parseInt(this.#input.value.substring(6, 10));
+                this._selectedStartDay = Number(inputValue.substring(0, 2));
+                this._selectedStartMonth = Number(inputValue.substring(3, 5)) - 1;
+                this._selectedStartYear = Number(inputValue.substring(6, 10));
                 if (this.isShowTime) {
-                    this._selectedStartHour = parseInt(this.#input.value.substring(11, 13));
-                    this._selectedStartMinute = parseInt(this.#input.value.substring(14));
+                    this._selectedStartHour = Number(inputValue.substring(11, 13));
+                    this._selectedStartMinute = Number(inputValue.substring(14));
                 }
             } else if (this.isShowTime) {
-                this._selectedStartHour = parseInt(this.#input.value.substring(0, 2));
-                this._selectedStartMinute = parseInt(this.#input.value.substring(3, 5));
+                this._selectedStartHour = Number(inputValue.substring(0, 2));
+                this._selectedStartMinute = Number(inputValue.substring(3, 5));
             }
             if (this.isPeriodMode) {
                 if (this.isShowDate) {
-                    this._selectedYearStart = parseInt(this.#input.value.substring(24, 28));
-                    this._selectedEndMonth = parseInt(this.#input.value.substring(21, 23)) - 1;
-                    this._selectedEndDay = parseInt(this.#input.value.substring(18, 20));
+                    this._selectedYearStart = Number(inputValue.substring(24, 28));
+                    this._selectedEndMonth = Number(inputValue.substring(21, 23)) - 1;
+                    this._selectedEndDay = Number(inputValue.substring(18, 20));
                     if (this.isShowTime) {
-                        this._selectedEndHour = parseInt(this.#input.value.substring(30, 32));
-                        this._selectedEndMinutes = parseInt(this.#input.value.substring(33));
+                        this._selectedEndHour = Number(inputValue.substring(30, 32));
+                        this._selectedEndMinutes = Number(inputValue.substring(33));
                     }
                 } else if (this.isShowTime) {
-                    this._selectedStartHour = parseInt(this.#input.value.substring(8, 10));
-                    this._selectedStartMinute = parseInt(this.#input.value.substring(11, 13));
+                    this._selectedStartHour = Number(inputValue.substring(8, 10));
+                    this._selectedStartMinute = Number(inputValue.substring(11, 13));
                 }
             }
         }
